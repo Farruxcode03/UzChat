@@ -21,7 +21,6 @@ DB_PATH = os.environ.get("DB_PATH", "uzchat.db")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(app.template_folder, exist_ok=True)
 
-AUTH_TOKENS = {}  # token -> dict
 SPAM_THRESHOLD = 3
 SPAM_WINDOW_SEC = 86400
 SPAM_BLOCK_SEC = 86400
@@ -91,6 +90,21 @@ def init_db():
             CREATE TABLE IF NOT EXISTS spam_blocks (
                 user_lower TEXT PRIMARY KEY,
                 blocked_until REAL NOT NULL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS auth_tokens (
+                token TEXT PRIMARY KEY,
+                mode TEXT NOT NULL,
+                phone_digits TEXT NOT NULL,
+                phone TEXT DEFAULT '',
+                name TEXT DEFAULT '',
+                username TEXT DEFAULT '',
+                code TEXT NOT NULL,
+                phone_matched INTEGER DEFAULT 0,
+                verified INTEGER DEFAULT 0,
+                tg_chat_id TEXT DEFAULT '',
+                expires REAL NOT NULL
             )
         """)
         cur.execute("""
@@ -249,6 +263,108 @@ def get_spam_status(user_name: str) -> dict:
     }
 
 
+def save_auth_token(token: str, rec: dict):
+    with _DB_LOCK:
+        conn = get_db()
+        conn.execute(
+            """
+            INSERT INTO auth_tokens(
+                token, mode, phone_digits, phone, name, username,
+                code, phone_matched, verified, tg_chat_id, expires
+            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(token) DO UPDATE SET
+                mode = excluded.mode,
+                phone_digits = excluded.phone_digits,
+                phone = excluded.phone,
+                name = excluded.name,
+                username = excluded.username,
+                code = excluded.code,
+                phone_matched = excluded.phone_matched,
+                verified = excluded.verified,
+                tg_chat_id = excluded.tg_chat_id,
+                expires = excluded.expires
+            """,
+            (
+                token,
+                rec.get("mode", "signup"),
+                rec.get("phone_digits", ""),
+                rec.get("phone", ""),
+                rec.get("name", ""),
+                rec.get("username", ""),
+                rec.get("code", ""),
+                1 if rec.get("phone_matched") else 0,
+                1 if rec.get("verified") else 0,
+                str(rec.get("tg_chat_id") or ""),
+                float(rec.get("expires") or 0),
+            ),
+        )
+        conn.commit()
+        conn.close()
+
+
+def get_auth_token(token: str) -> dict | None:
+    if not token:
+        return None
+    now = time.time()
+    with _DB_LOCK:
+        conn = get_db()
+        conn.execute("DELETE FROM auth_tokens WHERE expires < ?", (now,))
+        row = conn.execute("SELECT * FROM auth_tokens WHERE token = ?", (token,)).fetchone()
+        conn.commit()
+        conn.close()
+    if not row:
+        return None
+    return {
+        "token": row["token"],
+        "mode": row["mode"],
+        "phone_digits": row["phone_digits"],
+        "phone": row["phone"],
+        "name": row["name"],
+        "username": row["username"],
+        "code": row["code"],
+        "phone_matched": bool(row["phone_matched"]),
+        "verified": bool(row["verified"]),
+        "tg_chat_id": row["tg_chat_id"] or None,
+        "expires": float(row["expires"]),
+    }
+
+
+def delete_auth_token(token: str):
+    if not token:
+        return
+    with _DB_LOCK:
+        conn = get_db()
+        conn.execute("DELETE FROM auth_tokens WHERE token = ?", (token,))
+        conn.commit()
+        conn.close()
+
+
+def list_active_auth_tokens() -> list[dict]:
+    now = time.time()
+    with _DB_LOCK:
+        conn = get_db()
+        conn.execute("DELETE FROM auth_tokens WHERE expires < ?", (now,))
+        rows = conn.execute("SELECT * FROM auth_tokens ORDER BY expires ASC").fetchall()
+        conn.commit()
+        conn.close()
+    return [
+        {
+            "token": r["token"],
+            "mode": r["mode"],
+            "phone_digits": r["phone_digits"],
+            "phone": r["phone"],
+            "name": r["name"],
+            "username": r["username"],
+            "code": r["code"],
+            "phone_matched": bool(r["phone_matched"]),
+            "verified": bool(r["verified"]),
+            "tg_chat_id": r["tg_chat_id"] or None,
+            "expires": float(r["expires"]),
+        }
+        for r in rows
+    ]
+
+
 def tg_api(method: str, payload: dict | None = None):
     if not BOT_TOKEN:
         return None
@@ -259,9 +375,10 @@ def tg_api(method: str, payload: dict | None = None):
             req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
         else:
             req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=6) as resp:
+        with urllib.request.urlopen(req, timeout=8) as resp:
             return json.loads(resp.read().decode("utf-8"))
-    except Exception:
+    except Exception as e:
+        print(f"[TG_API_ERR] {method}: {e}")
         return None
 
 
@@ -278,6 +395,8 @@ def sync_telegram_updates():
 
         now = time.time()
         max_seen = LAST_UPDATE_ID
+        active_tokens = list_active_auth_tokens()
+
         for upd in res.get("result", []):
             upd_id = int(upd.get("update_id", 0) or 0)
             if upd_id > max_seen:
@@ -297,22 +416,23 @@ def sync_telegram_updates():
                 is_reset = param.startswith("reset_")
                 clean_param = param.replace("reset_", "", 1) if is_reset else param
 
-                matched_token = None
-                for tok, rec in AUTH_TOKENS.items():
+                matched_rec = None
+                for rec in active_tokens:
                     if now > rec.get("expires", 0):
                         continue
-                    if clean_param and tok.startswith(clean_param):
-                        matched_token = tok
+                    if clean_param and rec["token"].startswith(clean_param):
+                        matched_rec = rec
                         break
 
-                if not matched_token:
-                    for tok, rec in reversed(list(AUTH_TOKENS.items())):
-                        if now <= rec.get("expires", 0) and not rec.get("tg_chat_id"):
-                            matched_token = tok
+                if not matched_rec:
+                    for rec in reversed(active_tokens):
+                        if now <= rec.get("expires", 0) and not rec.get("verified"):
+                            matched_rec = rec
                             break
 
-                if matched_token:
-                    AUTH_TOKENS[matched_token]["tg_chat_id"] = chat_id
+                if matched_rec:
+                    matched_rec["tg_chat_id"] = str(chat_id)
+                    save_auth_token(matched_rec["token"], matched_rec)
 
                 tg_api("sendMessage", {
                     "chat_id": chat_id,
@@ -338,16 +458,17 @@ def sync_telegram_updates():
                     continue
 
                 matched = False
-                for tok, rec in AUTH_TOKENS.items():
+                for rec in active_tokens:
                     if now > rec.get("expires", 0):
                         continue
-                    if rec.get("tg_chat_id") and rec.get("tg_chat_id") != chat_id:
+                    if rec.get("tg_chat_id") and str(rec.get("tg_chat_id")) != str(chat_id):
                         continue
                     if rec.get("phone_digits") == tg_digits:
                         matched = True
-                        rec["tg_chat_id"] = chat_id
+                        rec["tg_chat_id"] = str(chat_id)
                         rec["phone_matched"] = True
                         rec["verified"] = True
+                        save_auth_token(rec["token"], rec)
                         action_label = "Parolni tiklash" if rec.get("mode") == "reset_password" else "Ro'yxatdan o'tish"
                         tg_api("sendMessage", {
                             "chat_id": chat_id,
@@ -368,11 +489,12 @@ def sync_telegram_updates():
 
 
 def _telegram_bg_worker():
+    tg_api("deleteWebhook", {"drop_pending_updates": False})
     while True:
         try:
             sync_telegram_updates()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[TG_WORKER_ERR] {e}")
         time.sleep(2.0)
 
 
@@ -541,7 +663,7 @@ def signup_start():
         if not existing_user:
             return jsonify({"ok": False, "error": "Bu telefon raqam bilan profil topilmadi."}), 404
         token = str(uuid.uuid4())
-        AUTH_TOKENS[token] = {
+        save_auth_token(token, {
             "mode": "reset_password",
             "phone_digits": digits,
             "code": code,
@@ -549,12 +671,11 @@ def signup_start():
             "verified": False,
             "tg_chat_id": None,
             "expires": time.time() + 600,
-        }
+        })
         return jsonify({
             "ok": True,
             "token": token,
             "bot_url": f"https://t.me/{BOT_USERNAME}?start=reset_{token[:8]}",
-            "tg_deep_link": f"tg://resolve?domain={BOT_USERNAME}&start=reset_{token[:8]}",
         })
 
     if not name:
@@ -577,7 +698,7 @@ def signup_start():
         return jsonify({"ok": False, "error": f"@{username} band."}), 400
 
     token = str(uuid.uuid4())
-    AUTH_TOKENS[token] = {
+    save_auth_token(token, {
         "mode": "signup",
         "phone_digits": digits,
         "phone": phone,
@@ -588,19 +709,18 @@ def signup_start():
         "verified": False,
         "tg_chat_id": None,
         "expires": time.time() + 600,
-    }
+    })
     return jsonify({
         "ok": True,
         "token": token,
         "bot_url": f"https://t.me/{BOT_USERNAME}?start={token[:8]}",
-        "tg_deep_link": f"tg://resolve?domain={BOT_USERNAME}&start={token[:8]}",
     })
 
 
 @app.get("/api/signup/status/<token>")
 def signup_status(token: str):
     sync_telegram_updates()
-    rec = AUTH_TOKENS.get(token)
+    rec = get_auth_token(token)
     if not rec or time.time() > rec["expires"]:
         return jsonify({"ok": False, "error": "Kod muddati tugagan."}), 404
     is_ver = bool(rec.get("verified") and rec.get("phone_matched"))
@@ -620,7 +740,7 @@ def signup_complete():
     password = data.get("password") or ""
     confirm = data.get("confirm_password") or ""
 
-    rec = AUTH_TOKENS.get(token)
+    rec = get_auth_token(token)
     if not rec or rec.get("mode") != "signup" or time.time() > rec["expires"]:
         return jsonify({"ok": False, "error": "Sessiya topilmadi yoki muddati o'tgan."}), 400
 
@@ -657,7 +777,7 @@ def signup_complete():
         conn.close()
 
     session["user_phone"] = digits
-    AUTH_TOKENS.pop(token, None)
+    delete_auth_token(token)
     return jsonify({"ok": True, "user": public_user(user)})
 
 
@@ -674,7 +794,7 @@ def password_reset():
     if not existing_user:
         return jsonify({"ok": False, "error": "Bu telefon raqam bilan profil topilmadi."}), 404
 
-    rec = AUTH_TOKENS.get(token)
+    rec = get_auth_token(token)
     if (
         not rec
         or rec.get("mode") != "reset_password"
@@ -702,7 +822,7 @@ def password_reset():
 
     existing_user["last_seen"] = now
     session["user_phone"] = digits
-    AUTH_TOKENS.pop(token, None)
+    delete_auth_token(token)
     return jsonify({"ok": True, "user": public_user(existing_user)})
 
 
