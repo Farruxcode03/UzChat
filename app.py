@@ -4,6 +4,7 @@ import json
 import os
 import random
 import re
+import threading
 import time
 import urllib.request
 import uuid
@@ -22,12 +23,16 @@ USERS_BY_PHONE = {}     # phone_digits -> user dict
 USERS_BY_USERNAME = {}  # username -> phone_digits
 AUTH_TOKENS = {}        # token -> dict
 MESSAGES = []           # message dicts
+CHATS_BY_ID = {}        # chat_id -> chat dict (group/channel)
 SPAM_REPORTS = {}       # target_lower -> [timestamps]
 SPAM_BLOCKS = {}        # user_lower -> blocked_until_timestamp
 SPAM_THRESHOLD = 3
 SPAM_WINDOW_SEC = 86400
 SPAM_BLOCK_SEC = 86400
 LAST_UPDATE_ID = 0
+ONLINE_WINDOW_SEC = 20
+_TG_LOCK = threading.Lock()
+_TG_BG_STARTED = False
 
 
 def norm_phone(p: str) -> str:
@@ -43,6 +48,11 @@ def hash_password(raw: str) -> str:
     return hmac.new(salt, (raw or "").encode("utf-8"), hashlib.sha256).hexdigest()
 
 
+def is_online(user: dict) -> bool:
+    last_seen = user.get("last_seen", 0)
+    return (time.time() - last_seen) <= ONLINE_WINDOW_SEC
+
+
 def public_user(user: dict) -> dict:
     return {
         "id": user["id"],
@@ -50,7 +60,18 @@ def public_user(user: dict) -> dict:
         "username": user["username"],
         "phone": user["phone"],
         "bio": user.get("bio", ""),
+        "online": is_online(user),
+        "last_seen": user.get("last_seen", 0),
     }
+
+
+def get_current_user():
+    digits = session.get("user_phone")
+    if not digits or digits not in USERS_BY_PHONE:
+        return None
+    u = USERS_BY_PHONE[digits]
+    u["last_seen"] = time.time()
+    return u
 
 
 def find_user_by_phone_and_password(phone_or_ident: str, password: str):
@@ -100,102 +121,164 @@ def tg_api(method: str, payload: dict | None = None):
 def sync_telegram_updates():
     """Ro'yxatdan o'tish va parol tiklashda bot orqali kontakt raqamini tekshiradi va kodni Telegramga yuboradi."""
     global LAST_UPDATE_ID
-    params = {"timeout": 0, "allowed_updates": ["message"]}
-    if LAST_UPDATE_ID:
-        params["offset"] = LAST_UPDATE_ID + 1
+    with _TG_LOCK:
+        params = {"timeout": 0, "allowed_updates": ["message"]}
+        if LAST_UPDATE_ID:
+            params["offset"] = LAST_UPDATE_ID + 1
 
-    res = tg_api("getUpdates", params)
-    if not res or not res.get("ok"):
-        return
+        res = tg_api("getUpdates", params)
+        if not res or not res.get("ok"):
+            return
 
-    now = time.time()
-    for upd in res.get("result", []):
-        upd_id = upd.get("update_id", 0)
-        if upd_id >= LAST_UPDATE_ID:
-            LAST_UPDATE_ID = upd_id
+        now = time.time()
+        for upd in res.get("result", []):
+            upd_id = upd.get("update_id", 0)
+            if upd_id >= LAST_UPDATE_ID:
+                LAST_UPDATE_ID = upd_id
 
-        msg = upd.get("message") or {}
-        chat_id = (msg.get("chat") or {}).get("id")
-        txt = (msg.get("text") or "").strip()
-        contact = msg.get("contact") or {}
+            msg = upd.get("message") or {}
+            chat_id = (msg.get("chat") or {}).get("id")
+            txt = (msg.get("text") or "").strip()
+            contact = msg.get("contact") or {}
 
-        if not chat_id:
-            continue
+            if not chat_id:
+                continue
 
-        if txt.startswith("/start"):
-            parts = txt.split(maxsplit=1)
-            param = parts[1].strip() if len(parts) > 1 else ""
-            is_reset = param.startswith("reset_")
-            clean_param = param.replace("reset_", "", 1) if is_reset else param
+            if txt.startswith("/start"):
+                parts = txt.split(maxsplit=1)
+                param = parts[1].strip() if len(parts) > 1 else ""
+                is_reset = param.startswith("reset_")
+                clean_param = param.replace("reset_", "", 1) if is_reset else param
 
-            matched_token = None
-            for tok, rec in AUTH_TOKENS.items():
-                if now > rec.get("expires", 0):
-                    continue
-                if clean_param and tok.startswith(clean_param):
-                    matched_token = tok
-                    break
-
-            if not matched_token:
-                for tok, rec in reversed(list(AUTH_TOKENS.items())):
-                    if now <= rec.get("expires", 0) and not rec.get("tg_chat_id"):
+                matched_token = None
+                for tok, rec in AUTH_TOKENS.items():
+                    if now > rec.get("expires", 0):
+                        continue
+                    if clean_param and tok.startswith(clean_param):
                         matched_token = tok
                         break
 
-            if matched_token:
-                AUTH_TOKENS[matched_token]["tg_chat_id"] = chat_id
+                if not matched_token:
+                    for tok, rec in reversed(list(AUTH_TOKENS.items())):
+                        if now <= rec.get("expires", 0) and not rec.get("tg_chat_id"):
+                            matched_token = tok
+                            break
 
-            tg_api("sendMessage", {
-                "chat_id": chat_id,
-                "text": "Xavfsizlik uchun pastdagi tugma orqali telefon raqamingizni yuboring. Raqam saytdagi raqam bilan mos kelsa, tasdiqlash kodi shu yerga yuboriladi:",
-                "reply_markup": {
-                    "keyboard": [[{"text": "📱 Telefon raqamni yuborish", "request_contact": True}]],
-                    "resize_keyboard": True,
-                    "one_time_keyboard": True,
-                },
-            })
-            continue
+                if matched_token:
+                    AUTH_TOKENS[matched_token]["tg_chat_id"] = chat_id
 
-        if contact.get("phone_number"):
-            tg_digits = norm_phone(contact["phone_number"])
-            sender_user_id = (msg.get("from") or {}).get("id")
-            contact_user_id = contact.get("user_id")
-
-            if sender_user_id and contact_user_id and sender_user_id != contact_user_id:
                 tg_api("sendMessage", {
                     "chat_id": chat_id,
-                    "text": "❌ Faqat o'zingizning Telegram telefon raqamingizni yuborishingiz mumkin.",
+                    "text": "Xavfsizlik uchun pastdagi tugma orqali telefon raqamingizni yuboring. Raqam saytdagi raqam bilan mos kelsa, tasdiqlash kodi shu yerga yuboriladi:",
+                    "reply_markup": {
+                        "keyboard": [[{"text": "📱 Telefon raqamni yuborish", "request_contact": True}]],
+                        "resize_keyboard": True,
+                        "one_time_keyboard": True,
+                    },
                 })
                 continue
 
-            matched = False
-            for tok, rec in AUTH_TOKENS.items():
-                if now > rec.get("expires", 0):
-                    continue
-                if rec.get("tg_chat_id") and rec.get("tg_chat_id") != chat_id:
-                    continue
-                if rec.get("phone_digits") == tg_digits:
-                    matched = True
-                    rec["tg_chat_id"] = chat_id
-                    rec["phone_matched"] = True
-                    rec["verified"] = True
-                    action_label = "Parolni tiklash" if rec.get("mode") == "reset_password" else "Ro'yxatdan o'tish"
+            if contact.get("phone_number"):
+                tg_digits = norm_phone(contact["phone_number"])
+                sender_user_id = (msg.get("from") or {}).get("id")
+                contact_user_id = contact.get("user_id")
+
+                if sender_user_id and contact_user_id and sender_user_id != contact_user_id:
                     tg_api("sendMessage", {
                         "chat_id": chat_id,
-                        "text": f"✅ Raqam tasdiqlandi ({action_label})!\nTasdiqlash kodi: <b>{rec['code']}</b>\nUshbu kodni saytga kiriting.",
-                        "parse_mode": "HTML",
-                        "reply_markup": {"remove_keyboard": True},
+                        "text": "❌ Faqat o'zingizning Telegram telefon raqamingizni yuborishingiz mumkin.",
+                    })
+                    continue
+
+                matched = False
+                for tok, rec in AUTH_TOKENS.items():
+                    if now > rec.get("expires", 0):
+                        continue
+                    if rec.get("tg_chat_id") and rec.get("tg_chat_id") != chat_id:
+                        continue
+                    if rec.get("phone_digits") == tg_digits:
+                        matched = True
+                        rec["tg_chat_id"] = chat_id
+                        rec["phone_matched"] = True
+                        rec["verified"] = True
+                        action_label = "Parolni tiklash" if rec.get("mode") == "reset_password" else "Ro'yxatdan o'tish"
+                        tg_api("sendMessage", {
+                            "chat_id": chat_id,
+                            "text": f"✅ Raqam tasdiqlandi ({action_label})!\nTasdiqlash kodi: <b>{rec['code']}</b>\nUshbu kodni saytga kiriting.",
+                            "parse_mode": "HTML",
+                            "reply_markup": {"remove_keyboard": True},
+                        })
+
+                if not matched:
+                    tg_api("sendMessage", {
+                        "chat_id": chat_id,
+                        "text": "❌ Yuborilgan telefon raqam saytda kiritilgan raqam bilan mos kelmadi.",
                     })
 
-            if not matched:
-                tg_api("sendMessage", {
-                    "chat_id": chat_id,
-                    "text": "❌ Yuborilgan telefon raqam saytda kiritilgan raqam bilan mos kelmadi.",
-                })
+
+def _telegram_bg_worker():
+    while True:
+        try:
+            sync_telegram_updates()
+        except Exception:
+            pass
+        time.sleep(2.5)
+
+
+def ensure_telegram_bg_worker():
+    global _TG_BG_STARTED
+    if _TG_BG_STARTED:
+        return
+    _TG_BG_STARTED = True
+    t = threading.Thread(target=_telegram_bg_worker, daemon=True)
+    t.start()
+
+
+ensure_telegram_bg_worker()
+
+
+def parse_meta_from_text(raw_text: str) -> tuple[str, dict]:
+    prefix = "__UZMETA__:"
+    if raw_text and raw_text.startswith(prefix):
+        nl = raw_text.find("\n")
+        js = raw_text[len(prefix):nl] if nl >= 0 else raw_text[len(prefix):]
+        try:
+            meta = json.loads(js)
+            if isinstance(meta, dict):
+                cid = str(meta.get("chatId") or "__FAVORITES__")
+                return cid, meta
+        except Exception:
+            pass
+    return "__FAVORITES__", {"chatId": "__FAVORITES__"}
+
+
+def register_chat_if_needed(meta: dict, user: dict):
+    chat_info = meta.get("chatInfo")
+    if not isinstance(chat_info, dict) or not chat_info.get("id"):
+        return
+    cid = str(chat_info["id"])
+    if cid == "__FAVORITES__" or cid.startswith("dm:"):
+        return
+    existing = CHATS_BY_ID.get(cid)
+    if not existing:
+        members = list(dict.fromkeys([user["name"], *(chat_info.get("members") or [])]))
+        CHATS_BY_ID[cid] = {
+            "id": cid,
+            "title": str(chat_info.get("title") or "Chat"),
+            "kind": str(chat_info.get("kind") or "group"),
+            "admin": str(chat_info.get("admin") or user["name"]),
+            "members": members,
+        }
+    else:
+        members = list(dict.fromkeys([*(existing.get("members") or []), *(chat_info.get("members") or [])]))
+        existing["members"] = members
+        if chat_info.get("title"):
+            existing["title"] = str(chat_info["title"])
 
 
 @app.route("/")
 def index():
+    ensure_telegram_bg_worker()
     base_dir = os.path.dirname(os.path.abspath(__file__))
     index_path = os.path.join(base_dir, "index.html")
     if os.path.exists(index_path):
@@ -322,6 +405,7 @@ def signup_complete():
         "phone": rec["phone"],
         "password_hash": hash_password(password),
         "bio": "",
+        "last_seen": time.time(),
     }
     USERS_BY_PHONE[digits] = user
     USERS_BY_USERNAME[rec["username"]] = digits
@@ -362,6 +446,7 @@ def password_reset():
 
     user = USERS_BY_PHONE[digits]
     user["password_hash"] = hash_password(new_password)
+    user["last_seen"] = time.time()
     session["user_phone"] = digits
     AUTH_TOKENS.pop(token, None)
     return jsonify({"ok": True, "user": public_user(user)})
@@ -377,42 +462,50 @@ def login():
     if not user:
         return jsonify({"ok": False, "error": "Telefon raqam yoki parol noto'g'ri."}), 401
 
+    user["last_seen"] = time.time()
     session["user_phone"] = norm_phone(user["phone"])
     return jsonify({"ok": True, "user": public_user(user)})
 
 
 @app.post("/api/logout")
 def logout():
+    digits = session.get("user_phone")
+    if digits and digits in USERS_BY_PHONE:
+        USERS_BY_PHONE[digits]["last_seen"] = 0
     session.pop("user_phone", None)
     return jsonify({"ok": True})
 
 
 @app.post("/api/profile")
 def update_profile():
-    data = request.get_json(silent=True) or {}
-    digits = session.get("user_phone")
-    if not digits or digits not in USERS_BY_PHONE:
+    user = get_current_user()
+    if not user:
         return jsonify({"ok": False, "error": "Avval tizimga kiring."}), 401
 
-    u = USERS_BY_PHONE[digits]
+    digits = norm_phone(user["phone"])
+    data = request.get_json(silent=True) or {}
     if data.get("name"):
-        u["name"] = data["name"].strip()
+        user["name"] = data["name"].strip()
     if data.get("username"):
         new_u = norm_username(data["username"])
         if new_u:
             owner = USERS_BY_USERNAME.get(new_u)
             if owner and owner != digits:
                 return jsonify({"ok": False, "error": f"@{new_u} allaqachon band."}), 400
-            USERS_BY_USERNAME.pop(u["username"], None)
-            u["username"] = new_u
+            USERS_BY_USERNAME.pop(user["username"], None)
+            user["username"] = new_u
             USERS_BY_USERNAME[new_u] = digits
     if "bio" in data:
-        u["bio"] = (data.get("bio") or "").strip()
-    return jsonify({"ok": True, "user": public_user(u)})
+        user["bio"] = (data.get("bio") or "").strip()
+    return jsonify({"ok": True, "user": public_user(user)})
 
 
 @app.get("/api/users/search")
 def search_users():
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "Avval tizimga kiring."}), 401
+
     q = (request.args.get("q") or "").strip().lower()
     q_digits = norm_phone(q)
     q_uname = norm_username(q)
@@ -429,18 +522,58 @@ def search_users():
 
 @app.get("/api/messages")
 def get_messages():
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "Avval tizimga kiring."}), 401
+
     ttl = int(request.args.get("ttl") or 0)
     now = time.time()
     if ttl > 0:
         MESSAGES[:] = [m for m in MESSAGES if now - m.get("ts", now) <= ttl]
-    return jsonify({"ok": True, "messages": MESSAGES})
+
+    my_name_low = user["name"].lower()
+    my_uname_low = user["username"].lower()
+    visible = []
+
+    for m in MESSAGES:
+        cid, meta = parse_meta_from_text(m.get("text") or "")
+        m["chat_id"] = cid
+        register_chat_if_needed(meta, user)
+
+        if cid == "__FAVORITES__":
+            if (m.get("sender") or "").lower() == my_name_low or (m.get("sender_username") or "").lower() == my_uname_low:
+                visible.append(m)
+        elif cid.startswith("dm:"):
+            parts = cid[3:].split("__")
+            if my_name_low in parts or my_uname_low in parts:
+                visible.append(m)
+        else:
+            chat = CHATS_BY_ID.get(cid)
+            members = [str(x).lower() for x in (chat.get("members") if chat else [])]
+            if not members or my_name_low in members or my_uname_low in members:
+                visible.append(m)
+
+    return jsonify({"ok": True, "messages": visible})
 
 
 @app.post("/api/messages")
 def create_message():
-    sender = (request.form.get("sender") or "").strip()
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "Avval tizimga kiring."}), 401
+
+    sender = user["name"]
     text = request.form.get("text") or ""
     reply_to = (request.form.get("reply_to") or "").strip() or None
+    chat_id, meta = parse_meta_from_text(text)
+    register_chat_if_needed(meta, user)
+
+    if chat_id in CHATS_BY_ID:
+        chat = CHATS_BY_ID[chat_id]
+        if chat.get("kind") == "channel":
+            admin_low = str(chat.get("admin") or "").lower()
+            if admin_low and admin_low != user["name"].lower() and admin_low != user["username"].lower():
+                return jsonify({"ok": False, "error": "Kanalda faqat admin xabar yoza oladi."}), 403
 
     st = get_spam_status(sender)
     if st["blocked"]:
@@ -473,7 +606,9 @@ def create_message():
 
     msg = {
         "id": str(uuid.uuid4()),
-        "sender": sender or "Foydalanuvchi",
+        "sender": sender,
+        "sender_username": user["username"],
+        "chat_id": chat_id,
         "text": text,
         "reply_to": reply_to,
         "media_url": media_url,
@@ -488,11 +623,21 @@ def create_message():
 
 @app.put("/api/messages/<msg_id>")
 def edit_message(msg_id: str):
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "Avval tizimga kiring."}), 401
+
     data = request.get_json(silent=True) or {}
     for m in MESSAGES:
         if m["id"] == msg_id:
+            sender_low = (m.get("sender") or "").lower()
+            if sender_low != user["name"].lower() and m.get("sender_username") != user["username"]:
+                return jsonify({"ok": False, "error": "Faqat o'z xabaringizni tahrirlashingiz mumkin."}), 403
             if "text" in data:
                 m["text"] = data["text"]
+                cid, meta = parse_meta_from_text(m["text"])
+                m["chat_id"] = cid
+                register_chat_if_needed(meta, user)
             m["edited"] = True
             return jsonify({"ok": True, "message": m})
     return jsonify({"ok": False, "error": "Xabar topilmadi."}), 404
@@ -500,14 +645,26 @@ def edit_message(msg_id: str):
 
 @app.delete("/api/messages/<msg_id>")
 def delete_message(msg_id: str):
-    global MESSAGES
-    before = len(MESSAGES)
-    MESSAGES = [m for m in MESSAGES if m["id"] != msg_id]
-    return jsonify({"ok": len(MESSAGES) < before})
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "Avval tizimga kiring."}), 401
+
+    for i, m in enumerate(MESSAGES):
+        if m["id"] == msg_id:
+            sender_low = (m.get("sender") or "").lower()
+            if sender_low != user["name"].lower() and m.get("sender_username") != user["username"]:
+                return jsonify({"ok": False, "error": "Faqat o'z xabaringizni o'chirishingiz mumkin."}), 403
+            MESSAGES.pop(i)
+            return jsonify({"ok": True})
+    return jsonify({"ok": False, "error": "Xabar topilmadi."}), 404
 
 
 @app.post("/api/spam/report")
 def spam_report():
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "Avval tizimga kiring."}), 401
+
     data = request.get_json(silent=True) or {}
     target = (data.get("target") or "").strip().lower()
     if not target:
@@ -528,7 +685,10 @@ def spam_dismiss():
 
 @app.get("/api/spam/status")
 def spam_status():
-    user = request.args.get("user") or ""
+    user = (request.args.get("user") or "").strip()
+    if not user:
+        cur = get_current_user()
+        user = cur["name"] if cur else ""
     return jsonify({"ok": True, **get_spam_status(user)})
 
 
@@ -538,5 +698,6 @@ def uploaded_file(filename):
 
 
 if __name__ == "__main__":
+    ensure_telegram_bg_worker()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
