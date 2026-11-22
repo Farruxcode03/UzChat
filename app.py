@@ -595,6 +595,7 @@ def list_secret_chats_for_user(user: dict) -> list[dict]:
     with _DB_LOCK:
         conn = get_db()
         rows = conn.execute("SELECT * FROM secret_chats ORDER BY created_at DESC").fetchall()
+        user_rows = conn.execute("SELECT phone_digits, name, username FROM users").fetchall()
         conn.close()
 
     out = []
@@ -605,22 +606,15 @@ def list_secret_chats_for_user(user: dict) -> list[dict]:
         b_low = b.lower()
         if my_low in {a_low, b_low} or (my_uname_low and my_uname_low in {a_low, b_low}):
             peer = b if a_low in {my_low, my_uname_low} else a
-            peer_u = get_user_by_username(peer) or (
-                get_user_by_phone_digits(
-                    next(
-                        (
-                            row["phone_digits"]
-                            for row in get_db().execute("SELECT phone_digits, lower(name) AS ln FROM users").fetchall()
-                            if row["ln"] == peer.lower()
-                        ),
-                        "",
-                    )
-                )
-            )
+            peer_uname = ""
+            for ur in user_rows:
+                if (ur["name"] or "").lower() == peer.lower() or (ur["username"] or "").lower() == peer.lower():
+                    peer_uname = ur["username"] or ""
+                    break
             out.append({
                 "id": r["id"],
                 "title": peer,
-                "username": peer_u["username"] if peer_u else "",
+                "username": peer_uname,
                 "kind": "secret",
                 "peerName": peer,
                 "auto_destruct_sec": int(r["auto_destruct_sec"] or 30),
@@ -884,7 +878,7 @@ def password_reset():
         or rec.get("phone_digits") != digits
         or time.time() > rec.get("expires", 0)
     ):
-        return jsonify({"ok": False, "error": "Sessiya topilmadi yoki muddati tugagan."}), 400
+        return jsonify({"ok": False, "error": "Sessiya topilmadi yoki muddati o'tgan."}), 400
 
     if not rec.get("verified") or not rec.get("phone_matched"):
         return jsonify({"ok": False, "error": "Avval Telegram botda telefon raqamingizni yuborib mosligini tasdiqlang."}), 400
