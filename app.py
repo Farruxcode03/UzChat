@@ -9,7 +9,7 @@ import urllib.request
 import uuid
 from flask import Flask, jsonify, render_template, request, send_from_directory, session
 
-app = Flask(__name__, template_folder="templates", static_folder="static")
+app = Flask(__name__, template_folder=".", static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "uzchat-secret-key")
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8595083453:AAEp_6M7b3rf47cgFqrRtF6T4T_mq5uFdh4")
