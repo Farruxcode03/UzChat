@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-  <title>UzChat — Telegram Tasdiq & Maxfiy Chat</title>
+  <title>UzChat — Telegram Usulida</title>
   <style>
     :root {
       --tg-top-blue: #527da3;
       --tg-blue: #5188c1;
       --tg-blue-dark: #4376ad;
-      --tg-secret: #2e8b57;
-      --tg-secret-dark: #216840;
       --tg-bg-left: #ffffff;
       --tg-bg-chat: #d8ead3;
       --tg-header: #f4f6f8;
@@ -53,19 +51,19 @@
     }
 
     input,
-    textarea,
-    select {
-      color: var(--tg-text);
-    }
+textarea,
+select {
+  color: var(--tg-text);
+}
 
-    .auth-card .input-box {
-      background: #f1f5f9;
-      color: #1c242b;
-    }
+.auth-card .input-box {
+  background: #f1f5f9;
+  color: #1c242b;
+}
 
-    .composer-bar textarea {
-      color: var(--tg-text);
-    }
+.composer-bar textarea {
+  color: var(--tg-text);
+}
 
     html, body {
       height: 100dvh;
@@ -92,6 +90,7 @@
       100% { box-shadow: 0 0 0 0 rgba(217, 67, 67, 0); }
     }
 
+    /* AUTH EKRANI */
     .auth-screen {
       height: 100dvh;
       width: 100%;
@@ -260,16 +259,15 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      padding: 10px 12px;
+      padding: 9px 12px;
       border-radius: 10px;
-      background: #e3f2fd;
-      border: 1px solid #90caf9;
-      color: #0d47a1;
-      font-weight: 700;
-      font-size: 13.5px;
+      background: #eef6ff;
+      border: 1px solid #b7d5f6;
+      color: var(--tg-blue-dark);
+      font-weight: 600;
+      font-size: 13px;
       text-decoration: none;
       margin-bottom: 10px;
-      cursor: pointer;
     }
 
     .note {
@@ -282,6 +280,7 @@
     .note.ok { color: var(--tg-ok); }
     .note.info { color: var(--tg-blue-dark); }
 
+    /* ASOSIY TELEGRAM USLUBIDAGI LAYOUT */
     .tg-shell {
       height: 100dvh;
       width: 100%;
@@ -352,7 +351,7 @@
     .top-right-actions {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
     }
 
     .create-group-pill {
@@ -360,8 +359,8 @@
       color: #ffffff;
       border: 1px solid rgba(255, 255, 255, 0.35);
       border-radius: 16px;
-      padding: 5px 9px;
-      font-size: 11.5px;
+      padding: 5px 10px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
@@ -372,16 +371,8 @@
       background: rgba(255, 255, 255, 0.3);
     }
 
-    .create-secret-pill {
-      background: rgba(46, 139, 87, 0.88);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      border-radius: 16px;
-      padding: 5px 9px;
-      font-size: 11.5px;
-      font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
+    .create-group-pill:active {
+      transform: scale(0.96);
     }
 
     .search-wrap {
@@ -414,7 +405,7 @@
     .folder-tabs {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       overflow-x: auto;
       scrollbar-width: none;
     }
@@ -427,7 +418,7 @@
       background: none;
       border: none;
       color: rgba(255, 255, 255, 0.78);
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 600;
       padding: 7px 2px 8px;
       border-bottom: 3px solid transparent;
@@ -454,7 +445,7 @@
     .search-results-box {
       background: var(--tg-card);
       border-bottom: 1px solid var(--tg-border);
-      max-height: 240px;
+      max-height: 200px;
       overflow-y: auto;
     }
 
@@ -502,14 +493,6 @@
     .chat-item.active {
       background: var(--tg-active);
       color: #fff;
-    }
-
-    .chat-item.secret-item .chat-name {
-      color: var(--tg-secret);
-    }
-
-    .chat-item.active.secret-item .chat-name {
-      color: #ffffff;
     }
 
     .chat-item.active .chat-sub,
@@ -618,6 +601,7 @@
       transform: scale(1.06);
     }
 
+    /* O'NG CHAT MAYDONI */
     .right-pane {
       display: flex;
       flex-direction: column;
@@ -631,19 +615,9 @@
       background-position: 0 0, 13px 13px;
     }
 
-    .right-pane.secret-mode {
-      background-color: #d3ede0;
-      background-image: radial-gradient(rgba(33, 104, 64, 0.15) 1.2px, transparent 1.2px);
-      background-size: 24px 24px;
-    }
-
     body.dark .right-pane {
       background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
       background-size: 22px 22px;
-    }
-
-    body.dark .right-pane.secret-mode {
-      background-color: #0c1f17;
     }
 
     .chat-header {
@@ -695,7 +669,6 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      flex-wrap: wrap;
     }
 
     .ttl-select {
@@ -726,19 +699,6 @@
 
     .small-btn.danger {
       color: var(--tg-danger);
-    }
-
-    .secret-notice-banner {
-      background: #e6f7ee;
-      border-bottom: 1px solid #8fd1ae;
-      padding: 7px 14px;
-      font-size: 12px;
-      color: #165b36;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-shrink: 0;
     }
 
     .spam-top-banner {
@@ -1272,15 +1232,15 @@
       </div>
 
       <!-- KIRISH -->
-      <form id="loginForm" autocomplete="off">
+      <form id="loginForm">
         <div class="form-group">
           <label for="loginName">Telefon raqami</label>
-          <input type="text" id="loginName" name="uzchat_auth_phone_v2" class="input-box" placeholder="+998 90 123 45 67" autocomplete="off" data-lpignore="true" data-form-type="other" required />
+          <input type="text" id="loginName" class="input-box" placeholder="+998 90 123 45 67" required />
         </div>
         <div class="form-group">
           <label for="loginPassword">Parol</label>
           <div class="password-box">
-            <input type="password" id="loginPassword" name="uzchat_auth_pass_v2" class="input-box" placeholder="Parol" autocomplete="new-password" data-lpignore="true" data-form-type="other" required />
+            <input type="password" id="loginPassword" class="input-box" placeholder="Parol" required />
             <button type="button" class="eye-btn" data-target="loginPassword">👁️</button>
           </div>
         </div>
@@ -1290,32 +1250,32 @@
       </form>
 
       <!-- PAROLNI TIKLASH -->
-      <form id="forgotForm" class="hidden" autocomplete="off">
+      <form id="forgotForm" class="hidden">
         <div class="form-group">
           <label for="forgotPhone">Ro‘yxatdan o‘tgan telefon raqami</label>
-          <input type="text" inputmode="tel" id="forgotPhone" name="uzchat_rst_phone_v2" class="input-box" placeholder="+998 90 123 45 67" autocomplete="off" data-lpignore="true" data-form-type="other" required />
+          <input type="tel" id="forgotPhone" class="input-box" placeholder="+998 90 123 45 67" required />
         </div>
-        <button type="button" id="forgotSendCodeBtn" class="btn-main">Telegramga o‘tib kod olish</button>
+        <button type="button" id="forgotSendCodeBtn" class="btn-main">Telegram botga yuborish</button>
 
         <div id="forgotStep2" class="hidden" style="margin-top:10px;">
           <a id="forgotBotLink" href="#" target="_blank" rel="noopener" class="btn-tg">
-            📲 Telegramga o‘tish (@{{ bot_username or 'FarruxCodeWorkbot' }})
+            📲 @{{ bot_username or 'FarruxCodeWorkbot' }} (/start)
           </a>
           <div class="form-group">
-            <label for="forgotCode">Tasdiqlash kodi (Telegramga boradi va saytga avtomatik yoziladi)</label>
-            <input type="text" inputmode="numeric" id="forgotCode" name="uzchat_rst_otp_v2" class="input-box" placeholder="Kod kutilmoqda..." maxlength="8" autocomplete="off" data-lpignore="true" />
+            <label for="forgotCode">Telegramdan kelgan kod</label>
+            <input type="text" id="forgotCode" class="input-box" placeholder="Kod kiriting" maxlength="8" />
           </div>
           <div class="form-group">
             <label for="forgotNewPass1">Yangi parol</label>
             <div class="password-box">
-              <input type="password" id="forgotNewPass1" name="uzchat_rst_p1_v2" class="input-box" placeholder="Kamida 4 belgi" autocomplete="new-password" data-lpignore="true" />
+              <input type="password" id="forgotNewPass1" class="input-box" placeholder="Kamida 4 belgi" />
               <button type="button" class="eye-btn" data-target="forgotNewPass1">👁️</button>
             </div>
           </div>
           <div class="form-group">
             <label for="forgotNewPass2">Yangi parolni tasdiqlang</label>
             <div class="password-box">
-              <input type="password" id="forgotNewPass2" name="uzchat_rst_p2_v2" class="input-box" placeholder="Qayta kiriting" autocomplete="new-password" data-lpignore="true" />
+              <input type="password" id="forgotNewPass2" class="input-box" placeholder="Qayta kiriting" />
               <button type="button" class="eye-btn" data-target="forgotNewPass2">👁️</button>
             </div>
           </div>
@@ -1326,42 +1286,42 @@
       </form>
 
       <!-- RO'YXATDAN O'TISH -->
-      <form id="signupForm" class="hidden" autocomplete="off">
+      <form id="signupForm" class="hidden">
         <div id="step1Box">
           <div class="form-group">
             <label for="signupName">Ism</label>
-            <input type="text" id="signupName" name="uzchat_reg_name_v2" class="input-box" placeholder="Ismingiz" autocomplete="off" data-lpignore="true" data-form-type="other" required />
+            <input type="text" id="signupName" class="input-box" placeholder="Ismingiz" required />
           </div>
           <div class="form-group">
             <label for="signupUsername">@username (nikneyk)</label>
-            <input type="text" id="signupUsername" name="uzchat_reg_handle_v2" class="input-box" placeholder="@username" autocomplete="off" data-lpignore="true" data-form-type="other" required />
+            <input type="text" id="signupUsername" class="input-box" placeholder="@username" required />
           </div>
           <div class="form-group">
             <label for="signupPhone">Telefon raqami (faqat 1 ta profil uchun)</label>
-            <input type="text" inputmode="tel" id="signupPhone" name="uzchat_reg_tel_v2" class="input-box" placeholder="+998 90 123 45 67" autocomplete="off" data-lpignore="true" data-form-type="other" required />
+            <input type="tel" id="signupPhone" class="input-box" placeholder="+998 90 123 45 67" required />
           </div>
-          <button type="button" id="getCodeBtn" class="btn-main">Telegramga o‘tib kod olish</button>
+          <button type="button" id="getCodeBtn" class="btn-main">Telegramdan kod olish</button>
         </div>
 
         <div id="step2Box" class="hidden">
           <a id="botLink" href="#" target="_blank" rel="noopener" class="btn-tg">
-            📲 Telegramga o‘tish (@{{ bot_username or 'FarruxCodeWorkbot' }})
+            📲 @{{ bot_username or 'FarruxCodeWorkbot' }} (/start)
           </a>
           <div class="form-group">
-            <label for="codeInput">Tasdiqlash kodi (Telegramga boradi va saytga avtomatik yoziladi)</label>
-            <input type="text" inputmode="numeric" id="codeInput" name="uzchat_reg_otp_v2" class="input-box" placeholder="Kod kutilmoqda..." maxlength="8" autocomplete="off" data-lpignore="true" />
+            <label for="codeInput">Telegramdan kelgan kod</label>
+            <input type="text" id="codeInput" class="input-box" placeholder="Kodni kiriting" maxlength="8" />
           </div>
           <div class="form-group">
             <label for="pass1Input">Parol</label>
             <div class="password-box">
-              <input type="password" id="pass1Input" name="uzchat_reg_p1_v2" class="input-box" placeholder="Kamida 4 belgi" autocomplete="new-password" data-lpignore="true" />
+              <input type="password" id="pass1Input" class="input-box" placeholder="Kamida 4 belgi" />
               <button type="button" class="eye-btn" data-target="pass1Input">👁️</button>
             </div>
           </div>
           <div class="form-group">
             <label for="pass2Input">Parolni tasdiqlang</label>
             <div class="password-box">
-              <input type="password" id="pass2Input" name="uzchat_reg_p2_v2" class="input-box" placeholder="Qayta kiriting" autocomplete="new-password" data-lpignore="true" />
+              <input type="password" id="pass2Input" class="input-box" placeholder="Qayta kiriting" />
               <button type="button" class="eye-btn" data-target="pass2Input">👁️</button>
             </div>
           </div>
@@ -1382,7 +1342,6 @@
             <span class="app-title-text">UzChat</span>
           </div>
           <div class="top-right-actions">
-            <button type="button" id="openSecretModalBtn" class="create-secret-pill" title="Maxfiy chat ochish">🔒 Maxfiy</button>
             <button type="button" id="topCreateGroupBtn" class="create-group-pill" title="Yangi guruh yoki kanal ochish">+ Guruh</button>
             <button type="button" id="themeToggleBtn" class="top-white-btn" title="Tungi / Kunduzgi rejim">🌓</button>
           </div>
@@ -1390,13 +1349,12 @@
 
         <div class="search-wrap">
           <span>🔍</span>
-          <input type="text" id="searchInput" placeholder="@username, guruh, kanal yoki telefon..." autocomplete="off" />
+          <input type="text" id="searchInput" placeholder="@username, telefon yoki chat..." />
         </div>
 
         <div class="folder-tabs" id="folderTabs">
           <button type="button" class="folder-tab active" data-folder="all">Barchasi <span class="folder-count-pill" id="cntAll">0</span></button>
           <button type="button" class="folder-tab" data-folder="dm">Lichkalar</button>
-          <button type="button" class="folder-tab" data-folder="secret">🔒 Maxfiy</button>
           <button type="button" class="folder-tab" data-folder="group">Guruhlar</button>
           <button type="button" class="folder-tab" data-folder="channel">Kanallar</button>
         </div>
@@ -1409,7 +1367,7 @@
       <button type="button" id="newChatFab" class="fab-compose" title="Guruh yoki Kanal ochish">✏️</button>
     </aside>
 
-    <main id="rightPane" class="right-pane">
+    <main class="right-pane">
       <header class="chat-header">
         <div class="header-left">
           <button type="button" id="backMobileBtn" class="back-mobile-btn">←</button>
@@ -1421,15 +1379,7 @@
         </div>
 
         <div class="header-actions">
-          <select id="secretTimerSelect" class="ttl-select hidden" title="Maxfiy xabar o'chish vaqti">
-            <option value="10">⏳ 10s</option>
-            <option value="30" selected>⏳ 30s</option>
-            <option value="60">⏳ 60s</option>
-            <option value="0">⏳ O‘chirilmasin</option>
-          </select>
-          <button type="button" id="chatMembersBtn" class="small-btn hidden" title="A’zolar va sozlamalar">👥 A’zolar</button>
-          <button type="button" id="leaveChatBtn" class="small-btn danger hidden" title="Guruh/Kanaldan chiqish">🚪 Chiqish</button>
-          <button type="button" id="deleteChatBtn" class="small-btn danger hidden" title="Chatni o‘chirish">🗑 O‘chirish</button>
+          <button type="button" id="chatMembersBtn" class="small-btn hidden" title="A’zolar">👥 A’zolar</button>
           <button type="button" id="pollOpenBtn" class="small-btn" title="So‘rovnoma">📊 Poll</button>
           <select id="ttlSelect" class="ttl-select" title="Avto-tozalash">
             <option value="86400" selected>24s</option>
@@ -1437,14 +1387,9 @@
             <option value="600">10m</option>
             <option value="0">Off</option>
           </select>
-          <button type="button" id="logoutBtn" class="small-btn danger">Akkauntdan chiqish</button>
+          <button type="button" id="logoutBtn" class="small-btn danger">Chiqish</button>
         </div>
       </header>
-
-      <div id="secretNoticeBanner" class="secret-notice-banner hidden">
-        <span>🔒 <strong>Maxfiy chat:</strong> Xabarlar maxfiy himoyada yuradi va taymer tugagach avtomatik o‘chadi.</span>
-        <span id="secretTimerLabel">Taymer: 30s</span>
-      </div>
 
       <div id="strangerSpamBanner" class="spam-top-banner hidden">
         <span id="strangerSpamText">Notanish foydalanuvchidan xabar keldi.</span>
@@ -1500,32 +1445,6 @@
     </main>
   </section>
 
-  <!-- MAXFIY CHAT YARATISH MODAL -->
-  <div id="secretChatModal" class="modal-bg hidden">
-    <div class="modal-card">
-      <h3>🔒 Yangi Maxfiy Chat</h3>
-      <div class="form-group">
-        <label for="secretPeerInput">Kimga yozmoqchisiz? (@username yoki ism)</label>
-        <input type="text" id="secretPeerInput" class="input-box" placeholder="@username yoki ism..." autocomplete="off" />
-        <div id="secretPeerSuggest" class="suggest-list hidden"></div>
-      </div>
-      <div class="form-group">
-        <label for="secretModalTimer">Xabarlar o‘z-o‘zidan o‘chish vaqti</label>
-        <select id="secretModalTimer" class="input-box">
-          <option value="10">10 soniya</option>
-          <option value="30" selected>30 soniya</option>
-          <option value="60">60 soniya</option>
-          <option value="0">O‘chirilmasin</option>
-        </select>
-      </div>
-      <div id="secretModalNote" class="note"></div>
-      <div class="modal-actions">
-        <button type="button" id="closeSecretModal" class="small-btn">Bekor</button>
-        <button type="button" id="createSecretBtn" class="btn-main" style="width:auto;padding:8px 14px;margin:0;background:var(--tg-secret);">🔒 Maxfiy chatni boshlash</button>
-      </div>
-    </div>
-  </div>
-
   <!-- GURUH YOKI KANAL YARATISH MODAL -->
   <div id="newChatModal" class="modal-bg hidden">
     <div class="modal-card">
@@ -1539,15 +1458,11 @@
       </div>
       <div class="form-group">
         <label for="newChatTitleInput">Guruh / Kanal nomi</label>
-        <input type="text" id="newChatTitleInput" class="input-box" placeholder="Masalan: Do‘stlar guruhi" autocomplete="off" />
-      </div>
-      <div class="form-group">
-        <label for="newChatUsernameInput">@username (qidiruvda topilishi uchun)</label>
-        <input type="text" id="newChatUsernameInput" class="input-box" placeholder="masalan: uzchat_guruh" autocomplete="off" />
+        <input type="text" id="newChatTitleInput" class="input-box" placeholder="Masalan: Do‘stlar guruhi" />
       </div>
       <div class="form-group">
         <label for="groupMemberInput">Guruhga a’zo qo‘shish (@username yoki telefon)</label>
-        <input type="text" id="groupMemberInput" class="input-box" placeholder="@username yoki +998..." autocomplete="off" />
+        <input type="text" id="groupMemberInput" class="input-box" placeholder="@username yoki +998..." />
         <div id="groupMemberSuggest" class="suggest-list hidden"></div>
         <div id="selectedGroupMembers" class="member-chips"></div>
       </div>
@@ -1564,15 +1479,8 @@
       <h3 id="cmTitle">👥 Guruh a’zolari</h3>
       <div id="cmList" style="font-size:13.5px;line-height:1.7;margin-bottom:10px;"></div>
       <div class="form-group">
-        <label for="cmRenameInput">Guruh / Kanal nomini o‘zgartirish (Admin)</label>
-        <div style="display:flex;gap:6px;">
-          <input type="text" id="cmRenameInput" class="input-box" placeholder="Yangi nom" autocomplete="off" />
-          <button type="button" id="cmRenameBtn" class="small-btn">Saqlash</button>
-        </div>
-      </div>
-      <div class="form-group">
         <label for="cmAddInput">A’zo qo‘shish (@username yoki telefon)</label>
-        <input type="text" id="cmAddInput" class="input-box" placeholder="@username yoki +998..." autocomplete="off" />
+        <input type="text" id="cmAddInput" class="input-box" placeholder="@username yoki +998..." />
         <div id="cmAddSuggest" class="suggest-list hidden"></div>
       </div>
       <div class="modal-actions">
@@ -1600,11 +1508,11 @@
 
       <div class="form-group">
         <label for="profNameInput">Ism</label>
-        <input type="text" id="profNameInput" class="input-box" placeholder="Ismingiz" autocomplete="off" />
+        <input type="text" id="profNameInput" class="input-box" placeholder="Ismingiz" />
       </div>
       <div class="form-group">
         <label for="profUsernameInput">@username (nikneyk)</label>
-        <input type="text" id="profUsernameInput" class="input-box" placeholder="@username" autocomplete="off" />
+        <input type="text" id="profUsernameInput" class="input-box" placeholder="@username" />
       </div>
       <div class="form-group">
         <label for="profPhoneInput">Telefon raqami</label>
@@ -1612,7 +1520,7 @@
       </div>
       <div class="form-group">
         <label for="profBioInput">Bio (o‘zingiz haqingizda)</label>
-        <input type="text" id="profBioInput" class="input-box" placeholder="Masalan: UzChat foydalanuvchisi" autocomplete="off" />
+        <input type="text" id="profBioInput" class="input-box" placeholder="Masalan: UzChat foydalanuvchisi" />
       </div>
 
       <div id="profNote" class="note"></div>
@@ -1629,11 +1537,11 @@
       <h3>📊 So‘rovnoma (Poll)</h3>
       <div class="form-group">
         <label for="pollQuestion">Savol</label>
-        <input type="text" id="pollQuestion" class="input-box" placeholder="Savol matni" autocomplete="off" />
+        <input type="text" id="pollQuestion" class="input-box" placeholder="Savol matni" />
       </div>
       <div class="form-group">
         <label for="pollOptions">Variantlar (vergul bilan)</label>
-        <input type="text" id="pollOptions" class="input-box" placeholder="Ha, Yo‘q" autocomplete="off" />
+        <input type="text" id="pollOptions" class="input-box" placeholder="Ha, Yo‘q" />
       </div>
       <div class="modal-actions">
         <button type="button" id="closePollModal" class="small-btn">Bekor</button>
@@ -1646,51 +1554,14 @@
     const META_PREFIX = "__UZMETA__:";
     const FAVORITES_KEY = "__FAVORITES__";
 
-    const AUTH_INPUT_IDS = [
-      "loginName",
-      "loginPassword",
-      "forgotPhone",
-      "forgotCode",
-      "forgotNewPass1",
-      "forgotNewPass2",
-      "signupName",
-      "signupUsername",
-      "signupPhone",
-      "codeInput",
-      "pass1Input",
-      "pass2Input",
-    ];
-
-    function clearBrowserAutofillLeak() {
-      AUTH_INPUT_IDS.forEach((id) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const val = (el.value || "").trim();
-        if (!val) return;
-        if (
-          id === "signupUsername" && /^\d+$/.test(val)
-        ) {
-          el.value = "";
-        }
-      });
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      clearBrowserAutofillLeak();
-      setTimeout(clearBrowserAutofillLeak, 120);
-      setTimeout(clearBrowserAutofillLeak, 500);
-    });
-
     const state = {
       user: null,
       rawMessages: [],
-      serverChats: [],
       customChats: [],
       activeChatId: FAVORITES_KEY,
       activeFolder: "all",
       searchQuery: "",
       pendingMembers: [],
-      selectedSecretPeer: "",
       replyTo: null,
       editingId: null,
       signupToken: null,
@@ -1699,7 +1570,6 @@
       authPoll: null,
       forgotPoll: null,
       countdownTimer: null,
-      secretTickTimer: null,
       blockedRemainingSec: 0,
       dismissedSpamPeers: [],
       mediaRecorder: null,
@@ -1709,7 +1579,6 @@
       lastChatListSig: "",
       lastMessagesSig: "",
       isPolling: false,
-      peerPresence: {},
     };
 
     const colors = ["#e17076", "#faa774", "#a695e7", "#7bc862", "#6ec9cb", "#65aadd", "#ee7aae"];
@@ -1743,46 +1612,6 @@
       localStorage.setItem("uzchat_user_photos", JSON.stringify(photos));
     }
 
-    function formatPeerStatus(userObj) {
-      if (!userObj) return "";
-      if (userObj.online) return "🟢 Online";
-      if (userObj.last_seen) {
-        const mins = Math.max(1, Math.floor((Date.now() / 1000 - userObj.last_seen) / 60));
-        if (mins < 60) return `⚪ ${mins} daqiqa oldin`;
-        const hrs = Math.floor(mins / 60);
-        return `⚪ ${hrs} soat oldin`;
-      }
-      return "⚪ Offline";
-    }
-
-    function updateChannelComposerAccess(chat) {
-      const ta = document.getElementById("msgTextarea");
-      const sb = document.getElementById("sendBtn");
-      if (state.blockedRemainingSec > 0) return;
-
-      if (chat && chat.kind === "channel") {
-        const myName = (state.user?.name || "").toLowerCase();
-        const myUser = (state.user?.username || "").toLowerCase();
-        const adminLow = (chat.admin || "").toLowerCase();
-        const isAdmin = !adminLow || adminLow === myName || adminLow === myUser;
-        if (!isAdmin) {
-          ta.disabled = true;
-          sb.disabled = true;
-          ta.placeholder = "Kanalda faqat admin xabar yoza oladi...";
-          return;
-        }
-      }
-
-      ta.disabled = false;
-      sb.disabled = false;
-      ta.placeholder = chat?.kind === "secret" ? "Maxfiy xabar yozing..." : "Xabar yozing...";
-    }
-
-    function bindTelegramLink(el, data) {
-      if (!el) return;
-      el.href = data.bot_url || "#";
-    }
-
     document.getElementById("themeToggleBtn").addEventListener("click", () => {
       document.body.classList.toggle("dark");
       localStorage.setItem("uzchat_theme_dark", document.body.classList.contains("dark") ? "1" : "0");
@@ -1813,7 +1642,6 @@
       loginForm.classList.remove("hidden");
       signupForm.classList.add("hidden");
       forgotForm.classList.add("hidden");
-      clearBrowserAutofillLeak();
     });
 
     tabSignup.addEventListener("click", () => {
@@ -1822,7 +1650,6 @@
       signupForm.classList.remove("hidden");
       loginForm.classList.add("hidden");
       forgotForm.classList.add("hidden");
-      clearBrowserAutofillLeak();
     });
 
     document.getElementById("openForgotBtn").addEventListener("click", () => {
@@ -1830,13 +1657,11 @@
       signupForm.classList.add("hidden");
       forgotForm.classList.remove("hidden");
       document.getElementById("forgotNote").textContent = "";
-      clearBrowserAutofillLeak();
     });
 
     document.getElementById("backToLoginBtn").addEventListener("click", () => {
       forgotForm.classList.add("hidden");
       loginForm.classList.remove("hidden");
-      clearBrowserAutofillLeak();
     });
 
     function setNote(el, msg, cls = "info") {
@@ -1862,27 +1687,21 @@
       if (!data.ok) return setNote(note, data.error || "Xato", "err");
 
       state.signupToken = data.token;
-      bindTelegramLink(document.getElementById("botLink"), data);
-      const codeInp = document.getElementById("codeInput");
-      codeInp.value = "";
+      if (data.bot_url) document.getElementById("botLink").href = data.bot_url;
+      document.getElementById("codeInput").value = "";
       document.getElementById("step1Box").classList.add("hidden");
       document.getElementById("step2Box").classList.remove("hidden");
-      setNote(note, "Telegram botga o‘ting, /start bosing va raqam yuboring. Kod botga borib, saytga avtomatik yoziladi.", "info");
+      setNote(note, "Telegram botga o‘tib /start bosing va telefon raqamingizni yuboring. Kod botga boradi.", "info");
 
       clearInterval(state.authPoll);
       state.authPoll = setInterval(async () => {
-        if (!state.signupToken) return;
         const r = await fetch(`/api/signup/status/${state.signupToken}`);
         const d = await r.json();
         if (d.ok && d.verified) {
           clearInterval(state.authPoll);
-          if (d.code) {
-            codeInp.value = d.code;
-            codeInp.dispatchEvent(new Event("input", { bubbles: true }));
-          }
-          setNote(note, `Kod Telegramga yuborildi va saytga avtomatik yozildi (${d.code || ""}). Parol kiriting.`, "ok");
+          setNote(note, "Telefon raqam Telegramda tasdiqlandi! Botga borgan kod va parolni kiriting.", "ok");
         }
-      }, 2000);
+      }, 2500);
     });
 
     signupForm.addEventListener("submit", async (e) => {
@@ -1922,28 +1741,22 @@
       const data = await res.json();
       if (!data.ok) return setNote(note, data.error || "Raqam topilmadi.", "err");
 
-      bindTelegramLink(document.getElementById("forgotBotLink"), data);
+      if (data.bot_url) document.getElementById("forgotBotLink").href = data.bot_url;
       state.forgotToken = data.token;
-      const fCodeInp = document.getElementById("forgotCode");
-      fCodeInp.value = "";
+      document.getElementById("forgotCode").value = "";
 
       document.getElementById("forgotStep2").classList.remove("hidden");
-      setNote(note, "Telegram botga o‘ting, /start bosing va raqam yuboring. Kod botga borib, saytga avtomatik yoziladi.", "info");
+      setNote(note, "Telegram botga o‘tib /start bosing va telefon raqamingizni yuboring. Kod botga yuboriladi.", "info");
 
       clearInterval(state.forgotPoll);
       state.forgotPoll = setInterval(async () => {
-        if (!state.forgotToken) return;
         const r = await fetch(`/api/signup/status/${state.forgotToken}`);
         const d = await r.json();
         if (d.ok && d.verified) {
           clearInterval(state.forgotPoll);
-          if (d.code) {
-            fCodeInp.value = d.code;
-            fCodeInp.dispatchEvent(new Event("input", { bubbles: true }));
-          }
-          setNote(note, `Kod Telegramga yuborildi va saytga avtomatik yozildi (${d.code || ""}). Yangi parol kiriting.`, "ok");
+          setNote(note, "Raqam mos keldi! Telegram botga borgan kod va yangi parolni kiriting.", "ok");
         }
-      }, 2000);
+      }, 2500);
     });
 
     forgotForm.addEventListener("submit", async (e) => {
@@ -1996,13 +1809,11 @@
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       await fetch("/api/logout", { method: "POST" });
       clearInterval(state.pollInterval);
-      clearInterval(state.secretTickTimer);
       state.user = null;
       state.lastChatListSig = "";
       state.lastMessagesSig = "";
       document.getElementById("tgShell").classList.add("hidden");
       document.getElementById("authScreen").classList.remove("hidden");
-      clearBrowserAutofillLeak();
     });
 
     function encodePayload(bodyText, meta) {
@@ -2011,7 +1822,7 @@
 
     function decodeMessage(raw) {
       const txt = raw.text || "";
-      let meta = { chatId: raw.chat_id || FAVORITES_KEY, reactions: {} };
+      let meta = { chatId: FAVORITES_KEY, reactions: {} };
       let cleanText = txt;
 
       if (txt.startsWith(META_PREFIX)) {
@@ -2021,6 +1832,11 @@
         try {
           meta = { ...meta, ...JSON.parse(jsonPart) };
         } catch (_) {}
+      }
+
+      if (meta.chatInfo && !state.customChats.some((c) => c.id === meta.chatInfo.id)) {
+        state.customChats.push(meta.chatInfo);
+        localStorage.setItem("uzchat_custom_chats", JSON.stringify(state.customChats));
       }
 
       const localReacts = JSON.parse(localStorage.getItem("uzchat_reactions") || "{}");
@@ -2036,6 +1852,8 @@
       state.user = user;
       state.lastChatListSig = "";
       state.lastMessagesSig = "";
+      const savedChats = JSON.parse(localStorage.getItem("uzchat_custom_chats") || "[]");
+      if (Array.isArray(savedChats)) state.customChats = savedChats;
       state.dismissedSpamPeers = JSON.parse(localStorage.getItem("uzchat_dismissed_spam") || "[]");
 
       document.getElementById("authScreen").classList.add("hidden");
@@ -2050,17 +1868,6 @@
         loadAll(false);
         checkSpamBlockStatus();
       }, 4000);
-
-      clearInterval(state.secretTickTimer);
-      state.secretTickTimer = setInterval(() => {
-        const nowSec = Date.now() / 1000;
-        const hadExpired = state.rawMessages.some((m) => Number(m.expire_at || 0) > 0 && Number(m.expire_at) <= nowSec);
-        if (hadExpired) {
-          state.rawMessages = state.rawMessages.filter((m) => !(Number(m.expire_at || 0) > 0 && Number(m.expire_at) <= nowSec));
-          state.lastMessagesSig = "";
-          renderMessages(true, false);
-        }
-      }, 1000);
     }
 
     function getAllChats() {
@@ -2073,15 +1880,11 @@
 
       const derivedDms = [];
       const myLow = (state.user?.name || "").toLowerCase();
-      const myUnameLow = (state.user?.username || "").toLowerCase();
-
       for (const m of state.rawMessages) {
-        const cid = m.meta?.chatId || m.chat_id || "";
+        const cid = m.meta?.chatId || "";
         if (cid.startsWith("dm:")) {
           const parts = cid.slice(3).split("__");
-          const isParticipant = parts.includes(myLow) || (myUnameLow && parts.includes(myUnameLow));
-          if (!isParticipant) continue;
-          const otherLow = parts[0] === myLow || parts[0] === myUnameLow ? parts[1] : parts[0];
+          const otherLow = parts[0] === myLow ? parts[1] : parts[0];
           const displayName =
             (m.sender || "").toLowerCase() === otherLow
               ? m.sender
@@ -2099,22 +1902,17 @@
       }
 
       const mapById = new Map();
-      for (const c of [...state.serverChats, ...state.customChats, ...derivedDms]) {
+      for (const c of [...state.customChats, ...derivedDms]) {
         if (!mapById.has(c.id)) mapById.set(c.id, c);
       }
 
       return [favChat, ...Array.from(mapById.values())];
     }
 
-    function renderAvatarContent(el, title, isFavorites = false, isSecret = false) {
+    function renderAvatarContent(el, title, isFavorites = false) {
       if (isFavorites) {
         el.innerHTML = "⭐";
         el.style.background = "#5188c1";
-        return;
-      }
-      if (isSecret) {
-        el.innerHTML = "🔒";
-        el.style.background = "#2e8b57";
         return;
       }
       const photo = getUserPhoto(title);
@@ -2127,58 +1925,6 @@
       }
     }
 
-    function updateHeaderChatButtons(chat) {
-      const membersBtn = document.getElementById("chatMembersBtn");
-      const leaveBtn = document.getElementById("leaveChatBtn");
-      const delBtn = document.getElementById("deleteChatBtn");
-      const secretTimerSel = document.getElementById("secretTimerSelect");
-      const secretBanner = document.getElementById("secretNoticeBanner");
-      const rightPane = document.getElementById("rightPane");
-
-      if (!chat || chat.id === FAVORITES_KEY) {
-        membersBtn.classList.add("hidden");
-        leaveBtn.classList.add("hidden");
-        delBtn.classList.add("hidden");
-        secretTimerSel.classList.add("hidden");
-        secretBanner.classList.add("hidden");
-        rightPane.classList.remove("secret-mode");
-        return;
-      }
-
-      if (chat.kind === "secret") {
-        membersBtn.classList.add("hidden");
-        leaveBtn.classList.add("hidden");
-        delBtn.classList.remove("hidden");
-        secretTimerSel.classList.remove("hidden");
-        secretBanner.classList.remove("hidden");
-        rightPane.classList.add("secret-mode");
-        const secVal = String(chat.auto_destruct_sec ?? 30);
-        secretTimerSel.value = secVal;
-        document.getElementById("secretTimerLabel").textContent =
-          secVal === "0" ? "Taymer: O‘chirilmagan" : `Taymer: ${secVal}s`;
-        return;
-      }
-
-      secretTimerSel.classList.add("hidden");
-      secretBanner.classList.add("hidden");
-      rightPane.classList.remove("secret-mode");
-
-      if (chat.kind === "group" || chat.kind === "channel") {
-        membersBtn.classList.remove("hidden");
-        leaveBtn.classList.remove("hidden");
-        const myName = (state.user?.name || "").toLowerCase();
-        const myUser = (state.user?.username || "").toLowerCase();
-        const adminLow = (chat.admin || "").toLowerCase();
-        const isAdmin = !adminLow || adminLow === myName || adminLow === myUser;
-        if (isAdmin) delBtn.classList.remove("hidden");
-        else delBtn.classList.add("hidden");
-      } else {
-        membersBtn.classList.add("hidden");
-        leaveBtn.classList.add("hidden");
-        delBtn.classList.remove("hidden");
-      }
-    }
-
     function selectChat(chatId, openMobile = true) {
       state.activeChatId = chatId;
       state.lastChatListSig = "";
@@ -2188,21 +1934,19 @@
       state.activeChatId = chat.id;
 
       const av = document.getElementById("activeAvatar");
-      renderAvatarContent(av, chat.title, chat.id === FAVORITES_KEY, chat.kind === "secret");
+      renderAvatarContent(av, chat.title, chat.id === FAVORITES_KEY);
 
-      const unameSuffix = chat.username ? ` @${chat.username}` : "";
       document.getElementById("activeChatTitle").textContent =
-        chat.kind === "secret"
-          ? `🔒 ${chat.title}${unameSuffix}`
-          : chat.kind === "channel"
-          ? `📢 ${chat.title}${unameSuffix}`
-          : chat.kind === "group"
-          ? `👥 ${chat.title}${unameSuffix}`
-          : chat.title;
+        chat.kind === "channel" ? `📢 ${chat.title}` : chat.kind === "group" ? `👥 ${chat.title}` : chat.title;
 
-      updateHeaderChatButtons(chat);
+      const membersBtn = document.getElementById("chatMembersBtn");
+      if (chat.kind === "group" || chat.kind === "channel") {
+        membersBtn.classList.remove("hidden");
+      } else {
+        membersBtn.classList.add("hidden");
+      }
+
       updateSpamBannerForChat(chat);
-      updateChannelComposerAccess(chat);
 
       if (openMobile && window.innerWidth <= 820) {
         document.getElementById("tgShell").classList.add("chat-open");
@@ -2211,125 +1955,6 @@
       renderChatList(true);
       renderMessages(true, true);
     }
-
-    document.getElementById("secretTimerSelect").addEventListener("change", async (e) => {
-      const chat = getAllChats().find((c) => c.id === state.activeChatId);
-      if (!chat || chat.kind !== "secret") return;
-      const val = parseInt(e.target.value, 10) || 0;
-      const res = await fetch(`/api/secret-chats/${encodeURIComponent(chat.id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ auto_destruct_sec: val }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        chat.auto_destruct_sec = val;
-        document.getElementById("secretTimerLabel").textContent =
-          val === "0" ? "Taymer: O‘chirilmagan" : `Taymer: ${val}s`;
-      }
-    });
-
-    document.getElementById("openSecretModalBtn").addEventListener("click", () => {
-      state.selectedSecretPeer = "";
-      document.getElementById("secretPeerInput").value = "";
-      document.getElementById("secretPeerSuggest").classList.add("hidden");
-      document.getElementById("secretModalTimer").value = "30";
-      document.getElementById("secretModalNote").textContent = "";
-      document.getElementById("secretChatModal").classList.remove("hidden");
-      document.getElementById("secretPeerInput").focus();
-    });
-
-    document.getElementById("closeSecretModal").addEventListener("click", () => {
-      document.getElementById("secretChatModal").classList.add("hidden");
-    });
-
-    document.getElementById("secretPeerInput").addEventListener("input", async (e) => {
-      const q = e.target.value.trim();
-      state.selectedSecretPeer = q.replace(/^@+/, "");
-      const box = document.getElementById("secretPeerSuggest");
-      if (!q) {
-        box.classList.add("hidden");
-        return;
-      }
-      const res = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      if (!data.ok) return;
-
-      const others = (data.users || []).filter(
-        (u) => (u.name || "").toLowerCase() !== (state.user?.name || "").toLowerCase()
-      );
-      box.classList.remove("hidden");
-      box.innerHTML = others.length
-        ? others
-            .map(
-              (u) => `
-            <div class="user-hit" onclick="pickSecretPeer('${escAttr(u.username || u.name)}', '${escAttr(u.name)}')">
-              <span><strong>${esc(u.name)}</strong> <small style="color:var(--tg-secret)">@${esc(u.username || "")}</small></span>
-              <small style="color:var(--tg-muted)">${esc(formatPeerStatus(u))}</small>
-            </div>
-          `
-            )
-            .join("")
-        : `<div class="search-section-label">Foydalanuvchi topilmadi</div>`;
-    });
-
-    window.pickSecretPeer = function (ident, displayName) {
-      state.selectedSecretPeer = ident;
-      document.getElementById("secretPeerInput").value = displayName || ident;
-      document.getElementById("secretPeerSuggest").classList.add("hidden");
-    };
-
-    document.getElementById("createSecretBtn").addEventListener("click", async () => {
-      const note = document.getElementById("secretModalNote");
-      const peerVal = (state.selectedSecretPeer || document.getElementById("secretPeerInput").value || "").trim().replace(/^@+/, "");
-      const secVal = parseInt(document.getElementById("secretModalTimer").value, 10) || 0;
-
-      if (!peerVal) return setNote(note, "Foydalanuvchi @username yoki ismini kiriting.", "err");
-
-      const res = await fetch("/api/secret-chats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ peer: peerVal, auto_destruct_sec: secVal }),
-      });
-      const data = await res.json();
-      if (!data.ok || !data.chat) {
-        return setNote(note, data.error || "Maxfiy chat ochib bo‘lmadi.", "err");
-      }
-
-      document.getElementById("secretChatModal").classList.add("hidden");
-      await loadAll(false);
-      selectChat(data.chat.id, true);
-    });
-
-    document.getElementById("leaveChatBtn").addEventListener("click", async () => {
-      const chat = getAllChats().find((c) => c.id === state.activeChatId);
-      if (!chat || (chat.kind !== "group" && chat.kind !== "channel")) return;
-      if (!confirm(`"${chat.title}" dan chiqmoqchimisiz? Chiqsangiz chat o‘chib ketadi.`)) return;
-
-      const res = await fetch(`/api/chats/${encodeURIComponent(chat.id)}/leave`, { method: "POST" });
-      const data = await res.json();
-      if (!data.ok) return alert(data.error || "Chiqishda xato.");
-
-      state.customChats = state.customChats.filter((c) => c.id !== chat.id);
-      state.serverChats = state.serverChats.filter((c) => c.id !== chat.id);
-      selectChat(FAVORITES_KEY, false);
-      await loadAll(true);
-    });
-
-    document.getElementById("deleteChatBtn").addEventListener("click", async () => {
-      const chat = getAllChats().find((c) => c.id === state.activeChatId);
-      if (!chat || chat.id === FAVORITES_KEY) return;
-      if (!confirm(`"${chat.title}" chatini o‘chirmoqchimisiz?`)) return;
-
-      const res = await fetch(`/api/chats/${encodeURIComponent(chat.id)}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!data.ok) return alert(data.error || "O‘chirishda xato.");
-
-      state.customChats = state.customChats.filter((c) => c.id !== chat.id);
-      state.serverChats = state.serverChats.filter((c) => c.id !== chat.id);
-      selectChat(FAVORITES_KEY, false);
-      await loadAll(true);
-    });
 
     document.querySelectorAll(".folder-tab").forEach((tab) => {
       tab.addEventListener("click", () => {
@@ -2356,7 +1981,7 @@
         return;
       }
 
-      const chatMsgs = state.rawMessages.filter((m) => (m.meta?.chatId || m.chat_id || "") === chat.id);
+      const chatMsgs = state.rawMessages.filter((m) => (m.meta?.chatId || "") === chat.id);
       const hasIncomingFromPeer = chatMsgs.some((m) => (m.sender || "").toLowerCase() === peerLow);
       const iSentFirst = chatMsgs.some((m) => (m.sender || "").toLowerCase() === myLow);
 
@@ -2417,8 +2042,6 @@
       } else {
         state.blockedRemainingSec = 0;
         applyBlockedState(false);
-        const curChat = getAllChats().find((c) => c.id === state.activeChatId);
-        updateChannelComposerAccess(curChat);
       }
     }
 
@@ -2457,8 +2080,6 @@
           clearInterval(state.countdownTimer);
           state.blockedRemainingSec = 0;
           applyBlockedState(false);
-          const curChat = getAllChats().find((c) => c.id === state.activeChatId);
-          updateChannelComposerAccess(curChat);
           return;
         }
         state.blockedRemainingSec -= 1;
@@ -2555,7 +2176,6 @@
     function openNewChatModal(defaultKind = "group") {
       document.getElementById("chatKindSelect").value = defaultKind;
       document.getElementById("newChatTitleInput").value = "";
-      document.getElementById("newChatUsernameInput").value = "";
       document.getElementById("groupMemberInput").value = "";
       document.getElementById("groupMemberSuggest").classList.add("hidden");
       state.pendingMembers = [];
@@ -2595,7 +2215,7 @@
               (u) => `
             <div class="user-hit" onclick="pickGroupMember('${escAttr(u.name)}')">
               <span><strong>${esc(u.name)}</strong> <small style="color:var(--tg-blue)">@${esc(u.username || "")}</small></span>
-              <small style="color:var(--tg-muted)">${esc(formatPeerStatus(u))} +</small>
+              <small style="color:var(--tg-muted)">${esc(u.phone || "")} +</small>
             </div>
           `
             )
@@ -2634,33 +2254,28 @@
     document.getElementById("createChatBtn").addEventListener("click", async () => {
       const kind = document.getElementById("chatKindSelect").value;
       const title = document.getElementById("newChatTitleInput").value.trim();
-      const uname = normalizeUsername(document.getElementById("newChatUsernameInput").value);
       if (!title) return;
 
-      const res = await fetch("/api/chats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind,
-          title,
-          username: uname,
-          members: state.pendingMembers,
-        }),
-      });
-      const data = await res.json();
-      if (!data.ok || !data.chat) {
-        return alert(data.error || "Yaratishda xato.");
-      }
+      const adminName = state.user?.name || "Admin";
+      const members = [adminName, ...state.pendingMembers];
 
-      const newChat = data.chat;
-      state.serverChats.unshift(newChat);
+      const newChat = {
+        id: `${kind}:${uuidSimple()}_${title.toLowerCase().replace(/\s+/g, "_")}`,
+        title,
+        kind,
+        admin: adminName,
+        members,
+      };
+
+      state.customChats.unshift(newChat);
+      localStorage.setItem("uzchat_custom_chats", JSON.stringify(state.customChats));
+
       document.getElementById("newChatTitleInput").value = "";
-      document.getElementById("newChatUsernameInput").value = "";
       document.getElementById("newChatModal").classList.add("hidden");
       selectChat(newChat.id, true);
 
       await postMessageContent(
-        `🎉 "${newChat.title}" ${kind === "channel" ? "kanali" : "guruhi"} ochildi! (${(newChat.members || []).length} a’zo)`,
+        `🎉 "${title}" ${kind === "channel" ? "kanali" : "guruhi"} ochildi! (${members.length} a’zo)`,
         { chatId: newChat.id, chatInfo: newChat, reactions: {} }
       );
     });
@@ -2669,34 +2284,13 @@
       const chat = getAllChats().find((c) => c.id === state.activeChatId);
       if (!chat) return;
       const members = chat.members || [chat.admin || state.user?.name || "Admin"];
-      const unameTxt = chat.username ? ` (@${chat.username})` : "";
-      document.getElementById("cmTitle").textContent = `👥 ${chat.title}${unameTxt} · ${members.length} a’zo`;
+      document.getElementById("cmTitle").textContent = `👥 ${chat.title} (${members.length} a’zo)`;
       document.getElementById("cmList").innerHTML = members
-        .map((m, idx) => `<div>• <strong>${esc(m)}</strong> ${idx === 0 || m.toLowerCase() === (chat.admin || "").toLowerCase() ? "— Admin" : ""}</div>`)
+        .map((m, idx) => `<div>• <strong>${esc(m)}</strong> ${idx === 0 ? "— Admin" : ""}</div>`)
         .join("");
-      document.getElementById("cmRenameInput").value = chat.title || "";
       document.getElementById("cmAddInput").value = "";
       document.getElementById("cmAddSuggest").classList.add("hidden");
       document.getElementById("chatMembersModal").classList.remove("hidden");
-    });
-
-    document.getElementById("cmRenameBtn").addEventListener("click", async () => {
-      const chat = getAllChats().find((c) => c.id === state.activeChatId);
-      if (!chat) return;
-      const newTitle = document.getElementById("cmRenameInput").value.trim();
-      if (!newTitle) return;
-
-      const res = await fetch(`/api/chats/${encodeURIComponent(chat.id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle }),
-      });
-      const data = await res.json();
-      if (!data.ok) return alert(data.error || "Nomini o‘zgartirishda xato.");
-
-      document.getElementById("chatMembersModal").classList.add("hidden");
-      await loadAll(false);
-      selectChat(chat.id, false);
     });
 
     document.getElementById("closeCmModal").addEventListener("click", () => {
@@ -2714,9 +2308,9 @@
       const data = await res.json();
       if (!data.ok) return;
 
-      const chat = getAllChats().find((c) => c.id === state.activeChatId);
-      const existing = (chat?.members || []).map((x) => x.toLowerCase());
-      const found = (data.users || []).filter((u) => !existing.includes((u.name || "").toLowerCase()));
+      const chat = state.customChats.find((c) => c.id === state.activeChatId);
+      const existing = chat?.members || [];
+      const found = (data.users || []).filter((u) => !existing.includes(u.name));
 
       box.classList.remove("hidden");
       box.innerHTML = found.length
@@ -2734,22 +2328,25 @@
     });
 
     window.addMemberToCurrentChat = async function (name) {
-      const chat = getAllChats().find((c) => c.id === state.activeChatId);
+      const chat = state.customChats.find((c) => c.id === state.activeChatId);
       if (!chat) return;
-      const members = [...(chat.members || [chat.admin || state.user?.name])];
-      if (!members.some((m) => m.toLowerCase() === name.toLowerCase())) {
-        members.push(name);
-        const updatedChat = { ...chat, members };
+      chat.members = chat.members || [chat.admin || state.user?.name];
+      if (!chat.members.includes(name)) {
+        chat.members.push(name);
+        localStorage.setItem("uzchat_custom_chats", JSON.stringify(state.customChats));
         document.getElementById("chatMembersModal").classList.add("hidden");
+        selectChat(chat.id, false);
         await postMessageContent(`➕ ${name} guruhga qo‘shildi`, {
           chatId: chat.id,
-          chatInfo: updatedChat,
+          chatInfo: chat,
           reactions: {},
         });
-        await loadAll(false);
-        selectChat(chat.id, false);
       }
     };
+
+    function uuidSimple() {
+      return Math.random().toString(36).slice(2, 7);
+    }
 
     const searchInput = document.getElementById("searchInput");
     const searchResultsBox = document.getElementById("searchResultsBox");
@@ -2765,83 +2362,49 @@
         return;
       }
 
-      const [uRes, cRes] = await Promise.all([
-        fetch(`/api/users/search?q=${encodeURIComponent(q)}`),
-        fetch(`/api/chats?q=${encodeURIComponent(q)}`),
-      ]);
-      const uData = await uRes.json();
-      const cData = await cRes.json();
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (!data.ok) return;
 
-      const others = (uData.ok ? uData.users || [] : []).filter(
+      const others = (data.users || []).filter(
         (u) => (u.name || "").toLowerCase() !== (state.user?.name || "").toLowerCase()
       );
-      const foundChats = cData.ok ? cData.search_chats || [] : [];
 
-      for (const u of others) {
-        state.peerPresence[(u.name || "").toLowerCase()] = u;
-        if (u.username) state.peerPresence[u.username.toLowerCase()] = u;
-      }
-
-      if (!others.length && !foundChats.length) {
+      if (!others.length) {
         searchResultsBox.classList.remove("hidden");
-        searchResultsBox.innerHTML = `<div class="search-section-label">Foydalanuvchi, guruh yoki kanal topilmadi</div>`;
+        searchResultsBox.innerHTML = `<div class="search-section-label">Foydalanuvchi topilmadi</div>`;
         return;
       }
 
-      let html = "";
-      if (others.length) {
-        html += `<div class="search-section-label">Foydalanuvchilar (@username / telefon)</div>` +
-          others
-            .map(
-              (u) => `
-            <div class="user-hit" onclick="openDirectChat('${escAttr(u.name)}')">
-              <div>
-                <strong>${esc(u.name)}</strong>
-                <span style="color:var(--tg-blue);font-size:12px;">@${esc(u.username || "")}</span>
-              </div>
-              <span style="color:var(--tg-muted);font-size:12px;">${esc(formatPeerStatus(u))}</span>
-            </div>
-          `
-            )
-            .join("");
-      }
-
-      if (foundChats.length) {
-        html += `<div class="search-section-label">Guruh va Kanallar (@username / nom)</div>` +
-          foundChats
-            .map(
-              (ch) => `
-            <div class="user-hit" onclick="joinOrOpenSearchedChat('${escAttr(ch.id)}', ${ch.is_member ? "true" : "false"})">
-              <div>
-                <strong>${ch.kind === "channel" ? "📢" : "👥"} ${esc(ch.title)}</strong>
-                ${ch.username ? `<span style="color:var(--tg-blue);font-size:12px;">@${esc(ch.username)}</span>` : ""}
-              </div>
-              <span style="color:var(--tg-blue);font-size:12px;font-weight:700;">${ch.is_member ? "Ochish" : "+ Qo‘shilish"}</span>
-            </div>
-          `
-            )
-            .join("");
-      }
-
       searchResultsBox.classList.remove("hidden");
-      searchResultsBox.innerHTML = html;
+      searchResultsBox.innerHTML =
+        `<div class="search-section-label">Topilgan foydalanuvchilar (@username / telefon)</div>` +
+        others
+          .map(
+            (u) => `
+          <div class="user-hit" onclick="openDirectChat('${escAttr(u.name)}')">
+            <div>
+              <strong>${esc(u.name)}</strong>
+              <span style="color:var(--tg-blue);font-size:12px;">@${esc(u.username || "")}</span>
+            </div>
+            <span style="color:var(--tg-muted);font-size:12px;">${esc(u.phone || "")}</span>
+          </div>
+        `
+          )
+          .join("");
     });
-
-    window.joinOrOpenSearchedChat = async function (chatId, alreadyMember) {
-      if (!alreadyMember) {
-        const res = await fetch(`/api/chats/${encodeURIComponent(chatId)}/join`, { method: "POST" });
-        const data = await res.json();
-        if (!data.ok) return alert(data.error || "Qo‘shilishda xato.");
-      }
-      searchInput.value = "";
-      state.searchQuery = "";
-      searchResultsBox.classList.add("hidden");
-      await loadAll(false);
-      selectChat(chatId, true);
-    };
 
     window.openDirectChat = function (peerName) {
       const cid = dmChatId(state.user?.name || "", peerName);
+      if (!state.customChats.some((c) => c.id === cid)) {
+        state.customChats.unshift({
+          id: cid,
+          title: peerName,
+          kind: "dm",
+          peerName,
+        });
+        localStorage.setItem("uzchat_custom_chats", JSON.stringify(state.customChats));
+      }
       searchInput.value = "";
       state.searchQuery = "";
       searchResultsBox.classList.add("hidden");
@@ -2876,26 +2439,11 @@
     });
 
     function messageBelongsToChat(m, chatId) {
-      const mChat = m.meta?.chatId || m.chat_id || FAVORITES_KEY;
+      const mChat = m.meta?.chatId || FAVORITES_KEY;
       if (chatId === FAVORITES_KEY) {
         return mChat === FAVORITES_KEY && (m.sender || "").toLowerCase() === (state.user?.name || "").toLowerCase();
       }
       return mChat === chatId;
-    }
-
-    async function refreshPresenceForActiveChat() {
-      const chat = getAllChats().find((c) => c.id === state.activeChatId);
-      if (!chat || (chat.kind !== "dm" && chat.kind !== "secret") || !chat.peerName) return;
-      try {
-        const res = await fetch(`/api/users/search?q=${encodeURIComponent(chat.peerName)}`);
-        const data = await res.json();
-        if (data.ok && Array.isArray(data.users)) {
-          const match = data.users.find((u) => (u.name || "").toLowerCase() === chat.peerName.toLowerCase());
-          if (match) {
-            state.peerPresence[chat.peerName.toLowerCase()] = match;
-          }
-        }
-      } catch (_) {}
     }
 
     async function loadAll(forceScrollBottom = false) {
@@ -2903,19 +2451,9 @@
       state.isPolling = true;
       try {
         const ttl = document.getElementById("ttlSelect").value;
-        const [mRes, cRes] = await Promise.all([
-          fetch(`/api/messages?ttl=${encodeURIComponent(ttl)}`),
-          fetch("/api/chats"),
-        ]);
-        const data = await mRes.json();
-        const cData = await cRes.json();
+        const res = await fetch(`/api/messages?ttl=${encodeURIComponent(ttl)}`);
+        const data = await res.json();
         if (!data.ok) return;
-
-        if (cData.ok && Array.isArray(cData.chats)) {
-          state.serverChats = cData.chats;
-        }
-
-        await refreshPresenceForActiveChat();
 
         const box = document.getElementById("messagesBox");
         const wasNearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
@@ -2924,11 +2462,7 @@
         state.rawMessages = (data.messages || []).map(decodeMessage);
 
         const activeChat = getAllChats().find((c) => c.id === state.activeChatId);
-        if (activeChat) {
-          updateHeaderChatButtons(activeChat);
-          updateSpamBannerForChat(activeChat);
-          updateChannelComposerAccess(activeChat);
-        }
+        if (activeChat) updateSpamBannerForChat(activeChat);
 
         renderChatList(false);
         const didRenderMsgs = renderMessages(false, forceScrollBottom || wasNearBottom || state.rawMessages.length > prevCount);
@@ -2948,10 +2482,7 @@
       document.getElementById("cntAll").textContent = String(allChats.length);
 
       const chats = allChats.filter((c) => {
-        const matchesSearch =
-          !q ||
-          (c.title || "").toLowerCase().includes(q) ||
-          (c.username || "").toLowerCase().includes(q.replace(/^@+/, ""));
+        const matchesSearch = !q || (c.title || "").toLowerCase().includes(q);
         if (!matchesSearch) return false;
         if (state.activeFolder === "all") return true;
         if (state.activeFolder === "dm") return c.kind === "dm" || c.kind === "favorites";
@@ -2965,7 +2496,7 @@
         items: chats.map((c) => {
           const msgs = state.rawMessages.filter((m) => messageBelongsToChat(m, c.id));
           const last = msgs[msgs.length - 1];
-          return [c.id, c.title, c.username || "", c.kind, c.auto_destruct_sec ?? "", (c.members || []).length, msgs.length, last?.id || "", last?.time || "", last?.bodyText || ""];
+          return [c.id, c.title, c.kind, (c.members || []).length, msgs.length, last?.id || "", last?.time || "", last?.bodyText || ""];
         }),
       });
 
@@ -2984,41 +2515,28 @@
               : last.bodyText || (last.media_type === "audio" ? "🎤 Ovozli xabar" : last.media_type ? `[${last.media_type}]` : "Xabar")
             : c.id === FAVORITES_KEY
             ? "O‘zingizga eslatma va fayllar"
-            : c.kind === "secret"
-            ? `🔒 Maxfiy chat · Taymer: ${c.auto_destruct_sec ?? 30}s`
             : c.kind === "channel"
-            ? `Kanal${c.username ? ` @${c.username}` : ""} · Admin: ${c.admin || "Admin"}`
+            ? "Kanal (Admin: siz)"
             : c.kind === "group"
-            ? `Guruh${c.username ? ` @${c.username}` : ""} · ${(c.members || []).length || 1} a’zo`
+            ? `Guruh · ${(c.members || []).length || 1} a’zo`
             : "Hali xabar yo‘q";
 
-          const photo = c.id === FAVORITES_KEY || c.kind === "secret" ? null : getUserPhoto(c.title);
+          const photo = c.id === FAVORITES_KEY ? null : getUserPhoto(c.title);
           const avInner =
             c.id === FAVORITES_KEY
               ? "⭐"
-              : c.kind === "secret"
-              ? "🔒"
               : photo
               ? `<img src="${photo}" alt="av" />`
               : esc((c.title || "C").charAt(0));
-          const avBg =
-            c.id === FAVORITES_KEY
-              ? "#5188c1"
-              : c.kind === "secret"
-              ? "#2e8b57"
-              : photo
-              ? "transparent"
-              : colorFor(c.title);
+          const avBg = c.id === FAVORITES_KEY ? "#5188c1" : photo ? "transparent" : colorFor(c.title);
           const activeClass = c.id === state.activeChatId ? "active" : "";
-          const secretClass = c.kind === "secret" ? "secret-item" : "";
-          const titlePrefix = c.kind === "secret" ? "🔒 " : "";
 
           return `
-            <div class="chat-item ${activeClass} ${secretClass}" onclick="selectChat('${escAttr(c.id)}', true)">
+            <div class="chat-item ${activeClass}" onclick="selectChat('${escAttr(c.id)}', true)">
               <div class="avatar" style="background:${avBg}">${avInner}</div>
               <div class="chat-info">
                 <div class="chat-row-top">
-                  <span class="chat-name">${titlePrefix}${esc(c.title)}</span>
+                  <span class="chat-name">${esc(c.title)}</span>
                   <span class="chat-time">${esc(last?.time || "")}</span>
                 </div>
                 <div class="chat-row-bottom">
@@ -3041,10 +2559,7 @@
     }
 
     function escAttr(s) {
-      return String(s || "")
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "\\'")
-        .replace(/"/g, "&quot;");
+      return String(s || "").replace(/'/g, "\\'");
     }
 
     function renderMessages(force = false, shouldScroll = false) {
@@ -3056,37 +2571,25 @@
       if (!chat) return false;
       if (chat.id === FAVORITES_KEY) {
         document.getElementById("activeChatSub").textContent = `Saqlangan xabarlar · ${msgs.length} ta`;
-      } else if (chat.kind === "secret") {
-        const peerObj = state.peerPresence[(chat.peerName || "").toLowerCase()];
-        const stLabel = formatPeerStatus(peerObj);
-        document.getElementById("activeChatSub").textContent =
-          `🔒 Maxfiy chat${stLabel ? ` · ${stLabel}` : ""} · ${msgs.length} ta`;
       } else if (chat.kind === "channel") {
         document.getElementById("activeChatSub").textContent = `Kanal · Admin: ${chat.admin || state.user?.name || "Admin"}`;
       } else if (chat.kind === "group") {
         const mCount = (chat.members || []).length || 1;
         document.getElementById("activeChatSub").textContent = `Guruh · ${mCount} ta a’zo · Admin: ${chat.admin || state.user?.name || "Admin"}`;
       } else {
-        const peerObj = state.peerPresence[(chat.peerName || "").toLowerCase()];
-        const stLabel = formatPeerStatus(peerObj);
-        document.getElementById("activeChatSub").textContent = stLabel
-          ? `${stLabel} · ${msgs.length} ta xabar`
-          : `Shaxsiy chat · ${msgs.length} ta xabar`;
+        document.getElementById("activeChatSub").textContent = `Shaxsiy chat · ${msgs.length} ta xabar`;
       }
 
-      const peerObjForSig = chat.kind === "dm" || chat.kind === "secret" ? state.peerPresence[(chat.peerName || "").toLowerCase()] : null;
       const sig = JSON.stringify({
         chatId: state.activeChatId,
         myName,
-        peerOnline: Boolean(peerObjForSig?.online),
-        items: msgs.map((m) => [m.id, m.sender, m.bodyText, m.edited, m.reply_to, m.media_url, m.expire_at || 0, JSON.stringify(m.meta?.reactions || {}), JSON.stringify(m.meta?.poll || null)]),
+        items: msgs.map((m) => [m.id, m.sender, m.bodyText, m.edited, m.reply_to, m.media_url, JSON.stringify(m.meta?.reactions || {}), JSON.stringify(m.meta?.poll || null)]),
       });
 
       if (!force && sig === state.lastMessagesSig) return false;
       state.lastMessagesSig = sig;
 
       const prevScrollTop = box.scrollTop;
-      const nowSec = Date.now() / 1000;
 
       box.innerHTML = msgs
         .map((m) => {
@@ -3142,10 +2645,6 @@
             ? `<img src="${senderPhoto}" alt="u" />`
             : esc((m.sender || "U").charAt(0));
 
-          const expNum = Number(m.expire_at || 0);
-          const leftSec = expNum > 0 ? Math.max(0, Math.ceil(expNum - nowSec)) : 0;
-          const timerBadge = expNum > 0 ? `<span style="color:#216840;font-weight:700;">⏳ ${leftSec}s</span>` : "";
-
           return `
             <div class="msg-wrap ${mine ? "mine" : "other"}">
               <div class="msg-mini-avatar" style="background:${senderPhoto ? "transparent" : colorFor(m.sender)}">${miniAvInner}</div>
@@ -3159,7 +2658,6 @@
                   ${pollHtml}
                   ${reactChips ? `<div class="reactions-row">${reactChips}</div>` : ""}
                   <div class="msg-foot">
-                    ${timerBadge}
                     ${m.edited ? `<span>edited</span>` : ""}
                     <span>${esc(m.time || "")}</span>
                     ${mine ? `<span class="tick-read">✓✓</span>` : ""}
