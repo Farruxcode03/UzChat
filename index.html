@@ -259,15 +259,16 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      padding: 9px 12px;
+      padding: 10px 12px;
       border-radius: 10px;
-      background: #eef6ff;
-      border: 1px solid #b7d5f6;
-      color: var(--tg-blue-dark);
-      font-weight: 600;
-      font-size: 13px;
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+      color: #0d47a1;
+      font-weight: 700;
+      font-size: 13.5px;
       text-decoration: none;
       margin-bottom: 10px;
+      cursor: pointer;
     }
 
     .note {
@@ -1252,15 +1253,15 @@
           <label for="forgotPhone">Ro‘yxatdan o‘tgan telefon raqami</label>
           <input type="tel" id="forgotPhone" class="input-box" placeholder="+998 90 123 45 67" required />
         </div>
-        <button type="button" id="forgotSendCodeBtn" class="btn-main">Telegram botga yuborish</button>
+        <button type="button" id="forgotSendCodeBtn" class="btn-main">Telegramga o‘tib kod olish</button>
 
         <div id="forgotStep2" class="hidden" style="margin-top:10px;">
-          <a id="forgotBotLink" href="#" target="_blank" rel="noopener" class="btn-tg">
-            📲 @{{ bot_username or 'FarruxCodeWorkbot' }} (/start)
+          <a id="forgotBotLink" href="#" class="btn-tg">
+            📲 Telegramga o‘tish (@{{ bot_username or 'FarruxCodeWorkbot' }})
           </a>
           <div class="form-group">
-            <label for="forgotCode">Telegramdan kelgan kod</label>
-            <input type="text" id="forgotCode" class="input-box" placeholder="Kod kiriting" maxlength="8" />
+            <label for="forgotCode">Tasdiqlash kodi (Telegramga boradi va saytga avtomatik yoziladi)</label>
+            <input type="text" id="forgotCode" class="input-box" placeholder="Kod kutilmoqda..." maxlength="8" />
           </div>
           <div class="form-group">
             <label for="forgotNewPass1">Yangi parol</label>
@@ -1297,16 +1298,16 @@
             <label for="signupPhone">Telefon raqami (faqat 1 ta profil uchun)</label>
             <input type="tel" id="signupPhone" class="input-box" placeholder="+998 90 123 45 67" required />
           </div>
-          <button type="button" id="getCodeBtn" class="btn-main">Telegramdan kod olish</button>
+          <button type="button" id="getCodeBtn" class="btn-main">Telegramga o‘tib kod olish</button>
         </div>
 
         <div id="step2Box" class="hidden">
-          <a id="botLink" href="#" target="_blank" rel="noopener" class="btn-tg">
-            📲 @{{ bot_username or 'FarruxCodeWorkbot' }} (/start)
+          <a id="botLink" href="#" class="btn-tg">
+            📲 Telegramga o‘tish (@{{ bot_username or 'FarruxCodeWorkbot' }})
           </a>
           <div class="form-group">
-            <label for="codeInput">Telegramdan kelgan kod</label>
-            <input type="text" id="codeInput" class="input-box" placeholder="Kodni kiriting" maxlength="8" />
+            <label for="codeInput">Tasdiqlash kodi (Telegramga boradi va saytga avtomatik yoziladi)</label>
+            <input type="text" id="codeInput" class="input-box" placeholder="Kod kutilmoqda..." maxlength="8" />
           </div>
           <div class="form-group">
             <label for="pass1Input">Parol</label>
@@ -1659,6 +1660,29 @@
       ta.placeholder = "Xabar yozing...";
     }
 
+    function bindTelegramLink(el, data) {
+      if (!el) return;
+      const webUrl = data.bot_url || "#";
+      const deepLink = data.tg_deep_link || webUrl;
+      el.href = webUrl;
+      el.onclick = function (ev) {
+        if (!webUrl || webUrl === "#") return;
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+        if (isMobile && deepLink.startsWith("tg://")) {
+          ev.preventDefault();
+          const win = window.open(deepLink, "_blank", "noopener");
+          setTimeout(() => {
+            if (!win || win.closed) {
+              window.open(webUrl, "_blank", "noopener");
+            }
+          }, 500);
+        } else {
+          el.setAttribute("target", "_blank");
+          el.setAttribute("rel", "noopener");
+        }
+      };
+    }
+
     document.getElementById("themeToggleBtn").addEventListener("click", () => {
       document.body.classList.toggle("dark");
       localStorage.setItem("uzchat_theme_dark", document.body.classList.contains("dark") ? "1" : "0");
@@ -1734,21 +1758,27 @@
       if (!data.ok) return setNote(note, data.error || "Xato", "err");
 
       state.signupToken = data.token;
-      if (data.bot_url) document.getElementById("botLink").href = data.bot_url;
-      document.getElementById("codeInput").value = "";
+      bindTelegramLink(document.getElementById("botLink"), data);
+      const codeInp = document.getElementById("codeInput");
+      codeInp.value = "";
       document.getElementById("step1Box").classList.add("hidden");
       document.getElementById("step2Box").classList.remove("hidden");
-      setNote(note, "Telegram botga o‘tib /start bosing va telefon raqamingizni yuboring. Kod botga boradi.", "info");
+      setNote(note, "Telegram botga o‘ting, /start bosing va raqam yuboring. Kod botga borib, saytga avtomatik yoziladi.", "info");
 
       clearInterval(state.authPoll);
       state.authPoll = setInterval(async () => {
+        if (!state.signupToken) return;
         const r = await fetch(`/api/signup/status/${state.signupToken}`);
         const d = await r.json();
         if (d.ok && d.verified) {
           clearInterval(state.authPoll);
-          setNote(note, "Telefon raqam Telegramda tasdiqlandi! Botga borgan kod va parolni kiriting.", "ok");
+          if (d.code) {
+            codeInp.value = d.code;
+            codeInp.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          setNote(note, `Kod Telegramga yuborildi va saytga avtomatik yozildi (${d.code || ""}). Parol kiriting.`, "ok");
         }
-      }, 2500);
+      }, 2000);
     });
 
     signupForm.addEventListener("submit", async (e) => {
@@ -1788,22 +1818,28 @@
       const data = await res.json();
       if (!data.ok) return setNote(note, data.error || "Raqam topilmadi.", "err");
 
-      if (data.bot_url) document.getElementById("forgotBotLink").href = data.bot_url;
+      bindTelegramLink(document.getElementById("forgotBotLink"), data);
       state.forgotToken = data.token;
-      document.getElementById("forgotCode").value = "";
+      const fCodeInp = document.getElementById("forgotCode");
+      fCodeInp.value = "";
 
       document.getElementById("forgotStep2").classList.remove("hidden");
-      setNote(note, "Telegram botga o‘tib /start bosing va telefon raqamingizni yuboring. Kod botga yuboriladi.", "info");
+      setNote(note, "Telegram botga o‘ting, /start bosing va raqam yuboring. Kod botga borib, saytga avtomatik yoziladi.", "info");
 
       clearInterval(state.forgotPoll);
       state.forgotPoll = setInterval(async () => {
+        if (!state.forgotToken) return;
         const r = await fetch(`/api/signup/status/${state.forgotToken}`);
         const d = await r.json();
         if (d.ok && d.verified) {
           clearInterval(state.forgotPoll);
-          setNote(note, "Raqam mos keldi! Telegram botga borgan kod va yangi parolni kiriting.", "ok");
+          if (d.code) {
+            fCodeInp.value = d.code;
+            fCodeInp.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          setNote(note, `Kod Telegramga yuborildi va saytga avtomatik yozildi (${d.code || ""}). Yangi parol kiriting.`, "ok");
         }
-      }, 2500);
+      }, 2000);
     });
 
     forgotForm.addEventListener("submit", async (e) => {
