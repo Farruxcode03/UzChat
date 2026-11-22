@@ -2913,6 +2913,21 @@
     });
 
     document.getElementById("ttlSelect").addEventListener("change", () => loadAll(false));
+
+    <script>
+  function forceClearAutofill() {
+    ["loginName", "loginPassword", "signupName", "signupUsername", "signupPhone", "codeInput", "pass1Input", "pass2Input"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (id === "loginName" || id === "loginPassword" || id === "signupUsername") {
+        el.value = "";
+      }
+    });
+  }
+  window.addEventListener("DOMContentLoaded", forceClearAutofill);
+  setTimeout(forceClearAutofill, 150);
+  setTimeout(forceClearAutofill, 600);
+</script>
   </script>
 </body>
 </html>
