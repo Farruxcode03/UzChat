@@ -51,19 +51,19 @@
     }
 
     input,
-textarea,
-select {
-  color: var(--tg-text);
-}
+    textarea,
+    select {
+      color: var(--tg-text);
+    }
 
-.auth-card .input-box {
-  background: #f1f5f9;
-  color: #1c242b;
-}
+    .auth-card .input-box {
+      background: #f1f5f9;
+      color: #1c242b;
+    }
 
-.composer-bar textarea {
-  color: var(--tg-text);
-}
+    .composer-bar textarea {
+      color: var(--tg-text);
+    }
 
     html, body {
       height: 100dvh;
@@ -1579,6 +1579,7 @@ select {
       lastChatListSig: "",
       lastMessagesSig: "",
       isPolling: false,
+      peerPresence: {},
     };
 
     const colors = ["#e17076", "#faa774", "#a695e7", "#7bc862", "#6ec9cb", "#65aadd", "#ee7aae"];
@@ -1610,6 +1611,41 @@ select {
       if (dataUrlOrNull) photos[k] = dataUrlOrNull;
       else delete photos[k];
       localStorage.setItem("uzchat_user_photos", JSON.stringify(photos));
+    }
+
+    function formatPeerStatus(userObj) {
+      if (!userObj) return "";
+      if (userObj.online) return "🟢 Online";
+      if (userObj.last_seen) {
+        const mins = Math.max(1, Math.floor((Date.now() / 1000 - userObj.last_seen) / 60));
+        if (mins < 60) return `⚪ ${mins} daqiqa oldin`;
+        const hrs = Math.floor(mins / 60);
+        return `⚪ ${hrs} soat oldin`;
+      }
+      return "⚪ Offline";
+    }
+
+    function updateChannelComposerAccess(chat) {
+      const ta = document.getElementById("msgTextarea");
+      const sb = document.getElementById("sendBtn");
+      if (state.blockedRemainingSec > 0) return;
+
+      if (chat && chat.kind === "channel") {
+        const myName = (state.user?.name || "").toLowerCase();
+        const myUser = (state.user?.username || "").toLowerCase();
+        const adminLow = (chat.admin || "").toLowerCase();
+        const isAdmin = !adminLow || adminLow === myName || adminLow === myUser;
+        if (!isAdmin) {
+          ta.disabled = true;
+          sb.disabled = true;
+          ta.placeholder = "Kanalda faqat admin xabar yoza oladi...";
+          return;
+        }
+      }
+
+      ta.disabled = false;
+      sb.disabled = false;
+      ta.placeholder = "Xabar yozing...";
     }
 
     document.getElementById("themeToggleBtn").addEventListener("click", () => {
@@ -1881,7 +1917,7 @@ select {
       const derivedDms = [];
       const myLow = (state.user?.name || "").toLowerCase();
       for (const m of state.rawMessages) {
-        const cid = m.meta?.chatId || "";
+        const cid = m.meta?.chatId || m.chat_id || "";
         if (cid.startsWith("dm:")) {
           const parts = cid.slice(3).split("__");
           const otherLow = parts[0] === myLow ? parts[1] : parts[0];
@@ -1947,6 +1983,7 @@ select {
       }
 
       updateSpamBannerForChat(chat);
+      updateChannelComposerAccess(chat);
 
       if (openMobile && window.innerWidth <= 820) {
         document.getElementById("tgShell").classList.add("chat-open");
@@ -1981,7 +2018,7 @@ select {
         return;
       }
 
-      const chatMsgs = state.rawMessages.filter((m) => (m.meta?.chatId || "") === chat.id);
+      const chatMsgs = state.rawMessages.filter((m) => (m.meta?.chatId || m.chat_id || "") === chat.id);
       const hasIncomingFromPeer = chatMsgs.some((m) => (m.sender || "").toLowerCase() === peerLow);
       const iSentFirst = chatMsgs.some((m) => (m.sender || "").toLowerCase() === myLow);
 
@@ -2042,6 +2079,8 @@ select {
       } else {
         state.blockedRemainingSec = 0;
         applyBlockedState(false);
+        const curChat = getAllChats().find((c) => c.id === state.activeChatId);
+        updateChannelComposerAccess(curChat);
       }
     }
 
@@ -2080,6 +2119,8 @@ select {
           clearInterval(state.countdownTimer);
           state.blockedRemainingSec = 0;
           applyBlockedState(false);
+          const curChat = getAllChats().find((c) => c.id === state.activeChatId);
+          updateChannelComposerAccess(curChat);
           return;
         }
         state.blockedRemainingSec -= 1;
@@ -2215,7 +2256,7 @@ select {
               (u) => `
             <div class="user-hit" onclick="pickGroupMember('${escAttr(u.name)}')">
               <span><strong>${esc(u.name)}</strong> <small style="color:var(--tg-blue)">@${esc(u.username || "")}</small></span>
-              <small style="color:var(--tg-muted)">${esc(u.phone || "")} +</small>
+              <small style="color:var(--tg-muted)">${esc(formatPeerStatus(u))} +</small>
             </div>
           `
             )
@@ -2370,6 +2411,11 @@ select {
         (u) => (u.name || "").toLowerCase() !== (state.user?.name || "").toLowerCase()
       );
 
+      for (const u of others) {
+        state.peerPresence[(u.name || "").toLowerCase()] = u;
+        if (u.username) state.peerPresence[u.username.toLowerCase()] = u;
+      }
+
       if (!others.length) {
         searchResultsBox.classList.remove("hidden");
         searchResultsBox.innerHTML = `<div class="search-section-label">Foydalanuvchi topilmadi</div>`;
@@ -2387,7 +2433,7 @@ select {
               <strong>${esc(u.name)}</strong>
               <span style="color:var(--tg-blue);font-size:12px;">@${esc(u.username || "")}</span>
             </div>
-            <span style="color:var(--tg-muted);font-size:12px;">${esc(u.phone || "")}</span>
+            <span style="color:var(--tg-muted);font-size:12px;">${esc(formatPeerStatus(u))}</span>
           </div>
         `
           )
@@ -2439,11 +2485,26 @@ select {
     });
 
     function messageBelongsToChat(m, chatId) {
-      const mChat = m.meta?.chatId || FAVORITES_KEY;
+      const mChat = m.meta?.chatId || m.chat_id || FAVORITES_KEY;
       if (chatId === FAVORITES_KEY) {
         return mChat === FAVORITES_KEY && (m.sender || "").toLowerCase() === (state.user?.name || "").toLowerCase();
       }
       return mChat === chatId;
+    }
+
+    async function refreshPresenceForActiveChat() {
+      const chat = getAllChats().find((c) => c.id === state.activeChatId);
+      if (!chat || chat.kind !== "dm" || !chat.peerName) return;
+      try {
+        const res = await fetch(`/api/users/search?q=${encodeURIComponent(chat.peerName)}`);
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.users)) {
+          const match = data.users.find((u) => (u.name || "").toLowerCase() === chat.peerName.toLowerCase());
+          if (match) {
+            state.peerPresence[chat.peerName.toLowerCase()] = match;
+          }
+        }
+      } catch (_) {}
     }
 
     async function loadAll(forceScrollBottom = false) {
@@ -2455,6 +2516,8 @@ select {
         const data = await res.json();
         if (!data.ok) return;
 
+        await refreshPresenceForActiveChat();
+
         const box = document.getElementById("messagesBox");
         const wasNearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
         const prevCount = state.rawMessages.length;
@@ -2462,7 +2525,10 @@ select {
         state.rawMessages = (data.messages || []).map(decodeMessage);
 
         const activeChat = getAllChats().find((c) => c.id === state.activeChatId);
-        if (activeChat) updateSpamBannerForChat(activeChat);
+        if (activeChat) {
+          updateSpamBannerForChat(activeChat);
+          updateChannelComposerAccess(activeChat);
+        }
 
         renderChatList(false);
         const didRenderMsgs = renderMessages(false, forceScrollBottom || wasNearBottom || state.rawMessages.length > prevCount);
@@ -2559,7 +2625,10 @@ select {
     }
 
     function escAttr(s) {
-      return String(s || "").replace(/'/g, "\\'");
+      return String(s || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, "&quot;");
     }
 
     function renderMessages(force = false, shouldScroll = false) {
@@ -2577,12 +2646,18 @@ select {
         const mCount = (chat.members || []).length || 1;
         document.getElementById("activeChatSub").textContent = `Guruh · ${mCount} ta a’zo · Admin: ${chat.admin || state.user?.name || "Admin"}`;
       } else {
-        document.getElementById("activeChatSub").textContent = `Shaxsiy chat · ${msgs.length} ta xabar`;
+        const peerObj = state.peerPresence[(chat.peerName || "").toLowerCase()];
+        const stLabel = formatPeerStatus(peerObj);
+        document.getElementById("activeChatSub").textContent = stLabel
+          ? `${stLabel} · ${msgs.length} ta xabar`
+          : `Shaxsiy chat · ${msgs.length} ta xabar`;
       }
 
+      const peerObjForSig = chat.kind === "dm" ? state.peerPresence[(chat.peerName || "").toLowerCase()] : null;
       const sig = JSON.stringify({
         chatId: state.activeChatId,
         myName,
+        peerOnline: Boolean(peerObjForSig?.online),
         items: msgs.map((m) => [m.id, m.sender, m.bodyText, m.edited, m.reply_to, m.media_url, JSON.stringify(m.meta?.reactions || {}), JSON.stringify(m.meta?.poll || null)]),
       });
 
