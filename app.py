@@ -12,7 +12,7 @@ from flask import Flask, jsonify, render_template, request, send_from_directory,
 app = Flask(__name__, template_folder=".", static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "uzchat-secret-key")
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8595083453:AAEp_6M7b3rf47cgFqrRtF6T4T_mq5uFdh4")
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "FarruxCodeWorkbot")
 UPLOAD_DIR = os.path.join(app.static_folder, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
