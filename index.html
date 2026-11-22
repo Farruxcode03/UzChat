@@ -1256,7 +1256,7 @@
         <button type="button" id="forgotSendCodeBtn" class="btn-main">Telegramga o‘tib kod olish</button>
 
         <div id="forgotStep2" class="hidden" style="margin-top:10px;">
-          <a id="forgotBotLink" href="#" class="btn-tg">
+          <a id="forgotBotLink" href="#" target="_blank" rel="noopener" class="btn-tg">
             📲 Telegramga o‘tish (@{{ bot_username or 'FarruxCodeWorkbot' }})
           </a>
           <div class="form-group">
@@ -1302,7 +1302,7 @@
         </div>
 
         <div id="step2Box" class="hidden">
-          <a id="botLink" href="#" class="btn-tg">
+          <a id="botLink" href="#" target="_blank" rel="noopener" class="btn-tg">
             📲 Telegramga o‘tish (@{{ bot_username or 'FarruxCodeWorkbot' }})
           </a>
           <div class="form-group">
@@ -1662,25 +1662,7 @@
 
     function bindTelegramLink(el, data) {
       if (!el) return;
-      const webUrl = data.bot_url || "#";
-      const deepLink = data.tg_deep_link || webUrl;
-      el.href = webUrl;
-      el.onclick = function (ev) {
-        if (!webUrl || webUrl === "#") return;
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
-        if (isMobile && deepLink.startsWith("tg://")) {
-          ev.preventDefault();
-          const win = window.open(deepLink, "_blank", "noopener");
-          setTimeout(() => {
-            if (!win || win.closed) {
-              window.open(webUrl, "_blank", "noopener");
-            }
-          }, 500);
-        } else {
-          el.setAttribute("target", "_blank");
-          el.setAttribute("rel", "noopener");
-        }
-      };
+      el.href = data.bot_url || "#";
     }
 
     document.getElementById("themeToggleBtn").addEventListener("click", () => {
