@@ -371,10 +371,6 @@
       background: rgba(255, 255, 255, 0.3);
     }
 
-    .create-group-pill:active {
-      transform: scale(0.96);
-    }
-
     .search-wrap {
       display: flex;
       align-items: center;
@@ -445,7 +441,7 @@
     .search-results-box {
       background: var(--tg-card);
       border-bottom: 1px solid var(--tg-border);
-      max-height: 200px;
+      max-height: 240px;
       overflow-y: auto;
     }
 
@@ -669,6 +665,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-wrap: wrap;
     }
 
     .ttl-select {
@@ -1349,7 +1346,7 @@
 
         <div class="search-wrap">
           <span>🔍</span>
-          <input type="text" id="searchInput" placeholder="@username, telefon yoki chat..." />
+          <input type="text" id="searchInput" placeholder="@username, guruh, kanal yoki telefon..." />
         </div>
 
         <div class="folder-tabs" id="folderTabs">
@@ -1379,7 +1376,9 @@
         </div>
 
         <div class="header-actions">
-          <button type="button" id="chatMembersBtn" class="small-btn hidden" title="A’zolar">👥 A’zolar</button>
+          <button type="button" id="chatMembersBtn" class="small-btn hidden" title="A’zolar va sozlamalar">👥 A’zolar</button>
+          <button type="button" id="leaveChatBtn" class="small-btn danger hidden" title="Guruh/Kanaldan chiqish">🚪 Chiqish</button>
+          <button type="button" id="deleteChatBtn" class="small-btn danger hidden" title="Chatni o‘chirish">🗑 O‘chirish</button>
           <button type="button" id="pollOpenBtn" class="small-btn" title="So‘rovnoma">📊 Poll</button>
           <select id="ttlSelect" class="ttl-select" title="Avto-tozalash">
             <option value="86400" selected>24s</option>
@@ -1387,7 +1386,7 @@
             <option value="600">10m</option>
             <option value="0">Off</option>
           </select>
-          <button type="button" id="logoutBtn" class="small-btn danger">Chiqish</button>
+          <button type="button" id="logoutBtn" class="small-btn danger">Akkauntdan chiqish</button>
         </div>
       </header>
 
@@ -1461,6 +1460,10 @@
         <input type="text" id="newChatTitleInput" class="input-box" placeholder="Masalan: Do‘stlar guruhi" />
       </div>
       <div class="form-group">
+        <label for="newChatUsernameInput">@username (qidiruvda topilishi uchun)</label>
+        <input type="text" id="newChatUsernameInput" class="input-box" placeholder="masalan: uzchat_guruh" />
+      </div>
+      <div class="form-group">
         <label for="groupMemberInput">Guruhga a’zo qo‘shish (@username yoki telefon)</label>
         <input type="text" id="groupMemberInput" class="input-box" placeholder="@username yoki +998..." />
         <div id="groupMemberSuggest" class="suggest-list hidden"></div>
@@ -1478,6 +1481,13 @@
     <div class="modal-card">
       <h3 id="cmTitle">👥 Guruh a’zolari</h3>
       <div id="cmList" style="font-size:13.5px;line-height:1.7;margin-bottom:10px;"></div>
+      <div class="form-group">
+        <label for="cmRenameInput">Guruh / Kanal nomini o‘zgartirish (Admin)</label>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="cmRenameInput" class="input-box" placeholder="Yangi nom" />
+          <button type="button" id="cmRenameBtn" class="small-btn">Saqlash</button>
+        </div>
+      </div>
       <div class="form-group">
         <label for="cmAddInput">A’zo qo‘shish (@username yoki telefon)</label>
         <input type="text" id="cmAddInput" class="input-box" placeholder="@username yoki +998..." />
@@ -1557,6 +1567,7 @@
     const state = {
       user: null,
       rawMessages: [],
+      serverChats: [],
       customChats: [],
       activeChatId: FAVORITES_KEY,
       activeFolder: "all",
@@ -1858,7 +1869,7 @@
 
     function decodeMessage(raw) {
       const txt = raw.text || "";
-      let meta = { chatId: FAVORITES_KEY, reactions: {} };
+      let meta = { chatId: raw.chat_id || FAVORITES_KEY, reactions: {} };
       let cleanText = txt;
 
       if (txt.startsWith(META_PREFIX)) {
@@ -1868,11 +1879,6 @@
         try {
           meta = { ...meta, ...JSON.parse(jsonPart) };
         } catch (_) {}
-      }
-
-      if (meta.chatInfo && !state.customChats.some((c) => c.id === meta.chatInfo.id)) {
-        state.customChats.push(meta.chatInfo);
-        localStorage.setItem("uzchat_custom_chats", JSON.stringify(state.customChats));
       }
 
       const localReacts = JSON.parse(localStorage.getItem("uzchat_reactions") || "{}");
@@ -1888,8 +1894,6 @@
       state.user = user;
       state.lastChatListSig = "";
       state.lastMessagesSig = "";
-      const savedChats = JSON.parse(localStorage.getItem("uzchat_custom_chats") || "[]");
-      if (Array.isArray(savedChats)) state.customChats = savedChats;
       state.dismissedSpamPeers = JSON.parse(localStorage.getItem("uzchat_dismissed_spam") || "[]");
 
       document.getElementById("authScreen").classList.add("hidden");
@@ -1916,11 +1920,15 @@
 
       const derivedDms = [];
       const myLow = (state.user?.name || "").toLowerCase();
+      const myUnameLow = (state.user?.username || "").toLowerCase();
+
       for (const m of state.rawMessages) {
         const cid = m.meta?.chatId || m.chat_id || "";
         if (cid.startsWith("dm:")) {
           const parts = cid.slice(3).split("__");
-          const otherLow = parts[0] === myLow ? parts[1] : parts[0];
+          const isParticipant = parts.includes(myLow) || (myUnameLow && parts.includes(myUnameLow));
+          if (!isParticipant) continue;
+          const otherLow = parts[0] === myLow || parts[0] === myUnameLow ? parts[1] : parts[0];
           const displayName =
             (m.sender || "").toLowerCase() === otherLow
               ? m.sender
@@ -1938,7 +1946,7 @@
       }
 
       const mapById = new Map();
-      for (const c of [...state.customChats, ...derivedDms]) {
+      for (const c of [...state.serverChats, ...state.customChats, ...derivedDms]) {
         if (!mapById.has(c.id)) mapById.set(c.id, c);
       }
 
@@ -1961,6 +1969,34 @@
       }
     }
 
+    function updateHeaderChatButtons(chat) {
+      const membersBtn = document.getElementById("chatMembersBtn");
+      const leaveBtn = document.getElementById("leaveChatBtn");
+      const delBtn = document.getElementById("deleteChatBtn");
+
+      if (!chat || chat.id === FAVORITES_KEY) {
+        membersBtn.classList.add("hidden");
+        leaveBtn.classList.add("hidden");
+        delBtn.classList.add("hidden");
+        return;
+      }
+
+      if (chat.kind === "group" || chat.kind === "channel") {
+        membersBtn.classList.remove("hidden");
+        leaveBtn.classList.remove("hidden");
+        const myName = (state.user?.name || "").toLowerCase();
+        const myUser = (state.user?.username || "").toLowerCase();
+        const adminLow = (chat.admin || "").toLowerCase();
+        const isAdmin = !adminLow || adminLow === myName || adminLow === myUser;
+        if (isAdmin) delBtn.classList.remove("hidden");
+        else delBtn.classList.add("hidden");
+      } else {
+        membersBtn.classList.add("hidden");
+        leaveBtn.classList.add("hidden");
+        delBtn.classList.remove("hidden");
+      }
+    }
+
     function selectChat(chatId, openMobile = true) {
       state.activeChatId = chatId;
       state.lastChatListSig = "";
@@ -1972,16 +2008,15 @@
       const av = document.getElementById("activeAvatar");
       renderAvatarContent(av, chat.title, chat.id === FAVORITES_KEY);
 
+      const unameSuffix = chat.username ? ` @${chat.username}` : "";
       document.getElementById("activeChatTitle").textContent =
-        chat.kind === "channel" ? `📢 ${chat.title}` : chat.kind === "group" ? `👥 ${chat.title}` : chat.title;
+        chat.kind === "channel"
+          ? `📢 ${chat.title}${unameSuffix}`
+          : chat.kind === "group"
+          ? `👥 ${chat.title}${unameSuffix}`
+          : chat.title;
 
-      const membersBtn = document.getElementById("chatMembersBtn");
-      if (chat.kind === "group" || chat.kind === "channel") {
-        membersBtn.classList.remove("hidden");
-      } else {
-        membersBtn.classList.add("hidden");
-      }
-
+      updateHeaderChatButtons(chat);
       updateSpamBannerForChat(chat);
       updateChannelComposerAccess(chat);
 
@@ -1992,6 +2027,36 @@
       renderChatList(true);
       renderMessages(true, true);
     }
+
+    document.getElementById("leaveChatBtn").addEventListener("click", async () => {
+      const chat = getAllChats().find((c) => c.id === state.activeChatId);
+      if (!chat || (chat.kind !== "group" && chat.kind !== "channel")) return;
+      if (!confirm(`"${chat.title}" dan chiqmoqchimisiz? Chiqsangiz chat o‘chib ketadi.`)) return;
+
+      const res = await fetch(`/api/chats/${encodeURIComponent(chat.id)}/leave`, { method: "POST" });
+      const data = await res.json();
+      if (!data.ok) return alert(data.error || "Chiqishda xato.");
+
+      state.customChats = state.customChats.filter((c) => c.id !== chat.id);
+      state.serverChats = state.serverChats.filter((c) => c.id !== chat.id);
+      selectChat(FAVORITES_KEY, false);
+      await loadAll(true);
+    });
+
+    document.getElementById("deleteChatBtn").addEventListener("click", async () => {
+      const chat = getAllChats().find((c) => c.id === state.activeChatId);
+      if (!chat || chat.id === FAVORITES_KEY) return;
+      if (!confirm(`"${chat.title}" chatini o‘chirmoqchimisiz?`)) return;
+
+      const res = await fetch(`/api/chats/${encodeURIComponent(chat.id)}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!data.ok) return alert(data.error || "O‘chirishda xato.");
+
+      state.customChats = state.customChats.filter((c) => c.id !== chat.id);
+      state.serverChats = state.serverChats.filter((c) => c.id !== chat.id);
+      selectChat(FAVORITES_KEY, false);
+      await loadAll(true);
+    });
 
     document.querySelectorAll(".folder-tab").forEach((tab) => {
       tab.addEventListener("click", () => {
@@ -2217,6 +2282,7 @@
     function openNewChatModal(defaultKind = "group") {
       document.getElementById("chatKindSelect").value = defaultKind;
       document.getElementById("newChatTitleInput").value = "";
+      document.getElementById("newChatUsernameInput").value = "";
       document.getElementById("groupMemberInput").value = "";
       document.getElementById("groupMemberSuggest").classList.add("hidden");
       state.pendingMembers = [];
@@ -2295,28 +2361,33 @@
     document.getElementById("createChatBtn").addEventListener("click", async () => {
       const kind = document.getElementById("chatKindSelect").value;
       const title = document.getElementById("newChatTitleInput").value.trim();
+      const uname = normalizeUsername(document.getElementById("newChatUsernameInput").value);
       if (!title) return;
 
-      const adminName = state.user?.name || "Admin";
-      const members = [adminName, ...state.pendingMembers];
+      const res = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind,
+          title,
+          username: uname,
+          members: state.pendingMembers,
+        }),
+      });
+      const data = await res.json();
+      if (!data.ok || !data.chat) {
+        return alert(data.error || "Yaratishda xato.");
+      }
 
-      const newChat = {
-        id: `${kind}:${uuidSimple()}_${title.toLowerCase().replace(/\s+/g, "_")}`,
-        title,
-        kind,
-        admin: adminName,
-        members,
-      };
-
-      state.customChats.unshift(newChat);
-      localStorage.setItem("uzchat_custom_chats", JSON.stringify(state.customChats));
-
+      const newChat = data.chat;
+      state.serverChats.unshift(newChat);
       document.getElementById("newChatTitleInput").value = "";
+      document.getElementById("newChatUsernameInput").value = "";
       document.getElementById("newChatModal").classList.add("hidden");
       selectChat(newChat.id, true);
 
       await postMessageContent(
-        `🎉 "${title}" ${kind === "channel" ? "kanali" : "guruhi"} ochildi! (${members.length} a’zo)`,
+        `🎉 "${newChat.title}" ${kind === "channel" ? "kanali" : "guruhi"} ochildi! (${(newChat.members || []).length} a’zo)`,
         { chatId: newChat.id, chatInfo: newChat, reactions: {} }
       );
     });
@@ -2325,13 +2396,34 @@
       const chat = getAllChats().find((c) => c.id === state.activeChatId);
       if (!chat) return;
       const members = chat.members || [chat.admin || state.user?.name || "Admin"];
-      document.getElementById("cmTitle").textContent = `👥 ${chat.title} (${members.length} a’zo)`;
+      const unameTxt = chat.username ? ` (@${chat.username})` : "";
+      document.getElementById("cmTitle").textContent = `👥 ${chat.title}${unameTxt} · ${members.length} a’zo`;
       document.getElementById("cmList").innerHTML = members
-        .map((m, idx) => `<div>• <strong>${esc(m)}</strong> ${idx === 0 ? "— Admin" : ""}</div>`)
+        .map((m, idx) => `<div>• <strong>${esc(m)}</strong> ${idx === 0 || m.toLowerCase() === (chat.admin || "").toLowerCase() ? "— Admin" : ""}</div>`)
         .join("");
+      document.getElementById("cmRenameInput").value = chat.title || "";
       document.getElementById("cmAddInput").value = "";
       document.getElementById("cmAddSuggest").classList.add("hidden");
       document.getElementById("chatMembersModal").classList.remove("hidden");
+    });
+
+    document.getElementById("cmRenameBtn").addEventListener("click", async () => {
+      const chat = getAllChats().find((c) => c.id === state.activeChatId);
+      if (!chat) return;
+      const newTitle = document.getElementById("cmRenameInput").value.trim();
+      if (!newTitle) return;
+
+      const res = await fetch(`/api/chats/${encodeURIComponent(chat.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle }),
+      });
+      const data = await res.json();
+      if (!data.ok) return alert(data.error || "Nomini o‘zgartirishda xato.");
+
+      document.getElementById("chatMembersModal").classList.add("hidden");
+      await loadAll(false);
+      selectChat(chat.id, false);
     });
 
     document.getElementById("closeCmModal").addEventListener("click", () => {
@@ -2349,9 +2441,9 @@
       const data = await res.json();
       if (!data.ok) return;
 
-      const chat = state.customChats.find((c) => c.id === state.activeChatId);
-      const existing = chat?.members || [];
-      const found = (data.users || []).filter((u) => !existing.includes(u.name));
+      const chat = getAllChats().find((c) => c.id === state.activeChatId);
+      const existing = (chat?.members || []).map((x) => x.toLowerCase());
+      const found = (data.users || []).filter((u) => !existing.includes((u.name || "").toLowerCase()));
 
       box.classList.remove("hidden");
       box.innerHTML = found.length
@@ -2369,25 +2461,22 @@
     });
 
     window.addMemberToCurrentChat = async function (name) {
-      const chat = state.customChats.find((c) => c.id === state.activeChatId);
+      const chat = getAllChats().find((c) => c.id === state.activeChatId);
       if (!chat) return;
-      chat.members = chat.members || [chat.admin || state.user?.name];
-      if (!chat.members.includes(name)) {
-        chat.members.push(name);
-        localStorage.setItem("uzchat_custom_chats", JSON.stringify(state.customChats));
+      const members = [...(chat.members || [chat.admin || state.user?.name])];
+      if (!members.some((m) => m.toLowerCase() === name.toLowerCase())) {
+        members.push(name);
+        const updatedChat = { ...chat, members };
         document.getElementById("chatMembersModal").classList.add("hidden");
-        selectChat(chat.id, false);
         await postMessageContent(`➕ ${name} guruhga qo‘shildi`, {
           chatId: chat.id,
-          chatInfo: chat,
+          chatInfo: updatedChat,
           reactions: {},
         });
+        await loadAll(false);
+        selectChat(chat.id, false);
       }
     };
-
-    function uuidSimple() {
-      return Math.random().toString(36).slice(2, 7);
-    }
 
     const searchInput = document.getElementById("searchInput");
     const searchResultsBox = document.getElementById("searchResultsBox");
@@ -2403,54 +2492,83 @@
         return;
       }
 
-      const res = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      if (!data.ok) return;
+      const [uRes, cRes] = await Promise.all([
+        fetch(`/api/users/search?q=${encodeURIComponent(q)}`),
+        fetch(`/api/chats?q=${encodeURIComponent(q)}`),
+      ]);
+      const uData = await uRes.json();
+      const cData = await cRes.json();
 
-      const others = (data.users || []).filter(
+      const others = (uData.ok ? uData.users || [] : []).filter(
         (u) => (u.name || "").toLowerCase() !== (state.user?.name || "").toLowerCase()
       );
+      const foundChats = cData.ok ? cData.search_chats || [] : [];
 
       for (const u of others) {
         state.peerPresence[(u.name || "").toLowerCase()] = u;
         if (u.username) state.peerPresence[u.username.toLowerCase()] = u;
       }
 
-      if (!others.length) {
+      if (!others.length && !foundChats.length) {
         searchResultsBox.classList.remove("hidden");
-        searchResultsBox.innerHTML = `<div class="search-section-label">Foydalanuvchi topilmadi</div>`;
+        searchResultsBox.innerHTML = `<div class="search-section-label">Foydalanuvchi, guruh yoki kanal topilmadi</div>`;
         return;
       }
 
-      searchResultsBox.classList.remove("hidden");
-      searchResultsBox.innerHTML =
-        `<div class="search-section-label">Topilgan foydalanuvchilar (@username / telefon)</div>` +
-        others
-          .map(
-            (u) => `
-          <div class="user-hit" onclick="openDirectChat('${escAttr(u.name)}')">
-            <div>
-              <strong>${esc(u.name)}</strong>
-              <span style="color:var(--tg-blue);font-size:12px;">@${esc(u.username || "")}</span>
+      let html = "";
+      if (others.length) {
+        html += `<div class="search-section-label">Foydalanuvchilar (@username / telefon)</div>` +
+          others
+            .map(
+              (u) => `
+            <div class="user-hit" onclick="openDirectChat('${escAttr(u.name)}')">
+              <div>
+                <strong>${esc(u.name)}</strong>
+                <span style="color:var(--tg-blue);font-size:12px;">@${esc(u.username || "")}</span>
+              </div>
+              <span style="color:var(--tg-muted);font-size:12px;">${esc(formatPeerStatus(u))}</span>
             </div>
-            <span style="color:var(--tg-muted);font-size:12px;">${esc(formatPeerStatus(u))}</span>
-          </div>
-        `
-          )
-          .join("");
+          `
+            )
+            .join("");
+      }
+
+      if (foundChats.length) {
+        html += `<div class="search-section-label">Guruh va Kanallar (@username / nom)</div>` +
+          foundChats
+            .map(
+              (ch) => `
+            <div class="user-hit" onclick="joinOrOpenSearchedChat('${escAttr(ch.id)}', ${ch.is_member ? "true" : "false"})">
+              <div>
+                <strong>${ch.kind === "channel" ? "📢" : "👥"} ${esc(ch.title)}</strong>
+                ${ch.username ? `<span style="color:var(--tg-blue);font-size:12px;">@${esc(ch.username)}</span>` : ""}
+              </div>
+              <span style="color:var(--tg-blue);font-size:12px;font-weight:700;">${ch.is_member ? "Ochish" : "+ Qo‘shilish"}</span>
+            </div>
+          `
+            )
+            .join("");
+      }
+
+      searchResultsBox.classList.remove("hidden");
+      searchResultsBox.innerHTML = html;
     });
+
+    window.joinOrOpenSearchedChat = async function (chatId, alreadyMember) {
+      if (!alreadyMember) {
+        const res = await fetch(`/api/chats/${encodeURIComponent(chatId)}/join`, { method: "POST" });
+        const data = await res.json();
+        if (!data.ok) return alert(data.error || "Qo‘shilishda xato.");
+      }
+      searchInput.value = "";
+      state.searchQuery = "";
+      searchResultsBox.classList.add("hidden");
+      await loadAll(false);
+      selectChat(chatId, true);
+    };
 
     window.openDirectChat = function (peerName) {
       const cid = dmChatId(state.user?.name || "", peerName);
-      if (!state.customChats.some((c) => c.id === cid)) {
-        state.customChats.unshift({
-          id: cid,
-          title: peerName,
-          kind: "dm",
-          peerName,
-        });
-        localStorage.setItem("uzchat_custom_chats", JSON.stringify(state.customChats));
-      }
       searchInput.value = "";
       state.searchQuery = "";
       searchResultsBox.classList.add("hidden");
@@ -2512,9 +2630,17 @@
       state.isPolling = true;
       try {
         const ttl = document.getElementById("ttlSelect").value;
-        const res = await fetch(`/api/messages?ttl=${encodeURIComponent(ttl)}`);
-        const data = await res.json();
+        const [mRes, cRes] = await Promise.all([
+          fetch(`/api/messages?ttl=${encodeURIComponent(ttl)}`),
+          fetch("/api/chats"),
+        ]);
+        const data = await mRes.json();
+        const cData = await cRes.json();
         if (!data.ok) return;
+
+        if (cData.ok && Array.isArray(cData.chats)) {
+          state.serverChats = cData.chats;
+        }
 
         await refreshPresenceForActiveChat();
 
@@ -2526,6 +2652,7 @@
 
         const activeChat = getAllChats().find((c) => c.id === state.activeChatId);
         if (activeChat) {
+          updateHeaderChatButtons(activeChat);
           updateSpamBannerForChat(activeChat);
           updateChannelComposerAccess(activeChat);
         }
@@ -2548,7 +2675,10 @@
       document.getElementById("cntAll").textContent = String(allChats.length);
 
       const chats = allChats.filter((c) => {
-        const matchesSearch = !q || (c.title || "").toLowerCase().includes(q);
+        const matchesSearch =
+          !q ||
+          (c.title || "").toLowerCase().includes(q) ||
+          (c.username || "").toLowerCase().includes(q.replace(/^@+/, ""));
         if (!matchesSearch) return false;
         if (state.activeFolder === "all") return true;
         if (state.activeFolder === "dm") return c.kind === "dm" || c.kind === "favorites";
@@ -2562,7 +2692,7 @@
         items: chats.map((c) => {
           const msgs = state.rawMessages.filter((m) => messageBelongsToChat(m, c.id));
           const last = msgs[msgs.length - 1];
-          return [c.id, c.title, c.kind, (c.members || []).length, msgs.length, last?.id || "", last?.time || "", last?.bodyText || ""];
+          return [c.id, c.title, c.username || "", c.kind, (c.members || []).length, msgs.length, last?.id || "", last?.time || "", last?.bodyText || ""];
         }),
       });
 
@@ -2582,9 +2712,9 @@
             : c.id === FAVORITES_KEY
             ? "O‘zingizga eslatma va fayllar"
             : c.kind === "channel"
-            ? "Kanal (Admin: siz)"
+            ? `Kanal${c.username ? ` @${c.username}` : ""} · Admin: ${c.admin || "Admin"}`
             : c.kind === "group"
-            ? `Guruh · ${(c.members || []).length || 1} a’zo`
+            ? `Guruh${c.username ? ` @${c.username}` : ""} · ${(c.members || []).length || 1} a’zo`
             : "Hali xabar yo‘q";
 
           const photo = c.id === FAVORITES_KEY ? null : getUserPhoto(c.title);
