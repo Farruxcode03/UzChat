@@ -1,4 +1,3 @@
-
 import hashlib
 import hmac
 import json
@@ -317,7 +316,7 @@ def sync_telegram_updates():
 
                 tg_api("sendMessage", {
                     "chat_id": chat_id,
-                    "text": "Xavfsizlik uchun pastdagi tugma orqali telefon raqamingizni yuboring. Raqam saytdagi raqam bilan mos kelsa, tasdiqlash kodi shu yerga yuboriladi:",
+                    "text": "Tasdiqlash kodini Telegramga olish uchun pastdagi tugma orqali telefon raqamingizni yuboring:",
                     "reply_markup": {
                         "keyboard": [[{"text": "📱 Telefon raqamni yuborish", "request_contact": True}]],
                         "resize_keyboard": True,
@@ -352,7 +351,7 @@ def sync_telegram_updates():
                         action_label = "Parolni tiklash" if rec.get("mode") == "reset_password" else "Ro'yxatdan o'tish"
                         tg_api("sendMessage", {
                             "chat_id": chat_id,
-                            "text": f"✅ Raqam tasdiqlandi ({action_label})!\nTasdiqlash kodi: <b>{rec['code']}</b>\nUshbu kodni saytga kiriting.",
+                            "text": f"✅ Raqam tasdiqlandi ({action_label})!\nTasdiqlash kodi: <b>{rec['code']}</b>\nKod saytga ham avtomatik yuborildi.",
                             "parse_mode": "HTML",
                             "reply_markup": {"remove_keyboard": True},
                         })
@@ -374,7 +373,7 @@ def _telegram_bg_worker():
             sync_telegram_updates()
         except Exception:
             pass
-        time.sleep(2.5)
+        time.sleep(2.0)
 
 
 def ensure_telegram_bg_worker():
@@ -555,6 +554,7 @@ def signup_start():
             "ok": True,
             "token": token,
             "bot_url": f"https://t.me/{BOT_USERNAME}?start=reset_{token[:8]}",
+            "tg_deep_link": f"tg://resolve?domain={BOT_USERNAME}&start=reset_{token[:8]}",
         })
 
     if not name:
@@ -593,6 +593,7 @@ def signup_start():
         "ok": True,
         "token": token,
         "bot_url": f"https://t.me/{BOT_USERNAME}?start={token[:8]}",
+        "tg_deep_link": f"tg://resolve?domain={BOT_USERNAME}&start={token[:8]}",
     })
 
 
@@ -602,9 +603,11 @@ def signup_status(token: str):
     rec = AUTH_TOKENS.get(token)
     if not rec or time.time() > rec["expires"]:
         return jsonify({"ok": False, "error": "Kod muddati tugagan."}), 404
+    is_ver = bool(rec.get("verified") and rec.get("phone_matched"))
     return jsonify({
         "ok": True,
-        "verified": bool(rec.get("verified") and rec.get("phone_matched")),
+        "verified": is_ver,
+        "code": rec.get("code") if is_ver else None,
     })
 
 
