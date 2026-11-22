@@ -1,0 +1,90 @@
+[
+  {
+    "id": "e12b9f49",
+    "sender": "Farrux",
+    "text": "salom",
+    "reply_to": null,
+    "media_url": null,
+    "media_type": null,
+    "time": "01:06",
+    "created_at": 1795291588.1689095,
+    "edited": false
+  },
+  {
+    "id": "561efc99",
+    "sender": "Admin",
+    "text": "salom",
+    "reply_to": null,
+    "media_url": null,
+    "media_type": null,
+    "time": "01:08",
+    "created_at": 1795291695.6559675,
+    "edited": false
+  },
+  {
+    "id": "f803499a",
+    "sender": "Admin",
+    "text": "qaletsiz",
+    "reply_to": null,
+    "media_url": null,
+    "media_type": null,
+    "time": "01:08",
+    "created_at": 1795291726.7023914,
+    "edited": false
+  },
+  {
+    "id": "7158805a",
+    "sender": "Admin",
+    "text": "__UZMETA__:{\"chatId\":\"dm:admin__farrux\",\"chatInfo\":{\"id\":\"dm:admin__farrux\",\"title\":\"Farrux\",\"kind\":\"dm\",\"peerName\":\"Farrux\"},\"poll\":{\"question\":\"Gurpada kim kop bollar yoki qizlar\",\"options\":[{\"label\":\"Bollar\",\"votes\":0},{\"label\":\"Qizlar\",\"votes\":0}]},\"reactions\":{}}",
+    "reply_to": null,
+    "media_url": null,
+    "media_type": null,
+    "time": "01:35",
+    "created_at": 1795293315.152957,
+    "edited": false
+  },
+  {
+    "id": "a238bf71",
+    "sender": "Admin",
+    "text": "__UZMETA__:{\"chatId\":\"__FAVORITES__\",\"chatInfo\":{\"id\":\"__FAVORITES__\",\"title\":\"Izbrannoye\",\"kind\":\"favorites\",\"sub\":\"Saqlangan xabarlar (o‘zingiz bilan chat)\"},\"reactions\":{}}\r\n😀",
+    "reply_to": null,
+    "media_url": null,
+    "media_type": null,
+    "time": "01:35",
+    "created_at": 1795293343.7361834,
+    "edited": false
+  },
+  {
+    "id": "ee609c92",
+    "sender": "Admin",
+    "text": "__UZMETA__:{\"chatId\":\"__FAVORITES__\",\"chatInfo\":{\"id\":\"__FAVORITES__\",\"title\":\"Izbrannoye\",\"kind\":\"favorites\",\"sub\":\"Saqlangan xabarlar (o‘zingiz bilan chat)\"},\"reactions\":{}}\r\n😀",
+    "reply_to": null,
+    "media_url": null,
+    "media_type": null,
+    "time": "01:35",
+    "created_at": 1795293354.3653438,
+    "edited": false
+  },
+  {
+    "id": "3fdf4365",
+    "sender": "Admin",
+    "text": "__UZMETA__:{\"chatId\":\"dm:admin__farrux\",\"chatInfo\":{\"id\":\"dm:admin__farrux\",\"title\":\"Farrux\",\"kind\":\"dm\",\"peerName\":\"Farrux\"},\"reactions\":{}}\r\n😀",
+    "reply_to": null,
+    "media_url": null,
+    "media_type": null,
+    "time": "01:36",
+    "created_at": 1795293376.6455722,
+    "edited": false
+  },
+  {
+    "id": "1f3b1c29",
+    "sender": "Farrux",
+    "text": "__UZMETA__:{\"chatId\":\"dm:admin__farrux\",\"chatInfo\":{\"id\":\"dm:admin__farrux\",\"title\":\"Farrux\",\"kind\":\"dm\",\"peerName\":\"Farrux\"},\"reactions\":{}}\r\nfarrux man",
+    "reply_to": null,
+    "media_url": null,
+    "media_type": null,
+    "time": "01:37",
+    "created_at": 1795293422.8775644,
+    "edited": false
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Farrux",
+    "phone": "909145752",
+    "chat_id": 8564930506,
+    "password_hash": "scrypt:32768:8:1$K2wavmB221ZIdeAn$5324c42610668b6ad729db2f6a97fbef7e543b9eb7fe0388f9f0f4b167351451bc79c0ed6b01f88438b52ed836b6aa2764dabcb053242680ea4d9d01d61e16d8",
+    "username": "farrux"
+  },
+  {
+    "name": "Admin",
+    "phone": "909145752",
+    "chat_id": 8564930506,
+    "password_hash": "scrypt:32768:8:1$K7c04JbwBafdQGCj$632804bf3cacbcdc9a61a077bcdd427f552e7c5640bc61f8c56e66f030f34737a0ca5a7bcaf5a50a775054fa0c5a171353da37bf4e8cd420da00e14ba0c7c805",
+    "username": "admin"
+  },
+  {
+    "name": "Admin1",
+    "phone": "909145752",
+    "chat_id": 8564930506,
+    "password_hash": "scrypt:32768:8:1$WfVXBphnq8fRNqKW$bca43a8e1fcf56eccc008f7d8d0f95fefc0ee26ace58175fa23540d36eabe0eee1f31639d7828373cd3b2c889be2ff93d5f48ad92dcc273b7aa31efdda25505b",
+    "username": "admin1"
+  },
+  {
+    "name": "admin2",
+    "username": "admin2",
+    "phone": "909145752",
+    "chat_id": 8564930506,
+    "password_hash": "scrypt:32768:8:1$qpv7aPUVQmH6TIAS$d0d637119101948da08db2bfddda90f4c1b73a9e74e6ebcf0db00b29aaacf62f2c1073bd78fa13cc40df2346c05c157f1e1ddaba5ff8a549e774b5545e82e476"
+  }
+]
