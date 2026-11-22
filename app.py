@@ -65,6 +65,15 @@ def init_db():
             )
         """)
         cur.execute("""
+            CREATE TABLE IF NOT EXISTS secret_chats (
+                id TEXT PRIMARY KEY,
+                user_a TEXT NOT NULL,
+                user_b TEXT NOT NULL,
+                auto_destruct_sec INTEGER DEFAULT 30,
+                created_at REAL DEFAULT 0
+            )
+        """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS messages (
                 id TEXT PRIMARY KEY,
                 sender TEXT NOT NULL,
@@ -76,9 +85,14 @@ def init_db():
                 media_type TEXT,
                 time_str TEXT NOT NULL,
                 ts REAL NOT NULL,
+                expire_at REAL DEFAULT 0,
                 edited INTEGER DEFAULT 0
             )
         """)
+        cols = [r["name"] for r in cur.execute("PRAGMA table_info(messages)").fetchall()]
+        if "expire_at" not in cols:
+            cur.execute("ALTER TABLE messages ADD COLUMN expire_at REAL DEFAULT 0")
+
         cur.execute("""
             CREATE TABLE IF NOT EXISTS spam_reports (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -553,6 +567,68 @@ def get_chat_from_db(chat_id: str):
     return row_to_chat(row) if row else None
 
 
+def get_secret_chat_from_db(chat_id: str):
+    if not chat_id:
+        return None
+    with _DB_LOCK:
+        conn = get_db()
+        row = conn.execute("SELECT * FROM secret_chats WHERE id = ?", (chat_id,)).fetchone()
+        conn.close()
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "user_a": row["user_a"],
+        "user_b": row["user_b"],
+        "auto_destruct_sec": int(row["auto_destruct_sec"] or 30),
+        "created_at": float(row["created_at"] or 0),
+    }
+
+
+def list_secret_chats_for_user(user: dict) -> list[dict]:
+    if not user:
+        return []
+    my_name = (user.get("name") or "").strip()
+    my_low = my_name.lower()
+    my_uname_low = (user.get("username") or "").lower()
+
+    with _DB_LOCK:
+        conn = get_db()
+        rows = conn.execute("SELECT * FROM secret_chats ORDER BY created_at DESC").fetchall()
+        conn.close()
+
+    out = []
+    for r in rows:
+        a = (r["user_a"] or "").strip()
+        b = (r["user_b"] or "").strip()
+        a_low = a.lower()
+        b_low = b.lower()
+        if my_low in {a_low, b_low} or (my_uname_low and my_uname_low in {a_low, b_low}):
+            peer = b if a_low in {my_low, my_uname_low} else a
+            peer_u = get_user_by_username(peer) or (
+                get_user_by_phone_digits(
+                    next(
+                        (
+                            row["phone_digits"]
+                            for row in get_db().execute("SELECT phone_digits, lower(name) AS ln FROM users").fetchall()
+                            if row["ln"] == peer.lower()
+                        ),
+                        "",
+                    )
+                )
+            )
+            out.append({
+                "id": r["id"],
+                "title": peer,
+                "username": peer_u["username"] if peer_u else "",
+                "kind": "secret",
+                "peerName": peer,
+                "auto_destruct_sec": int(r["auto_destruct_sec"] or 30),
+                "created_at": float(r["created_at"] or 0),
+            })
+    return out
+
+
 def user_is_chat_member(chat: dict, user: dict) -> bool:
     if not chat or not user:
         return False
@@ -581,6 +657,13 @@ def can_access_chat_id(chat_id: str, user: dict) -> bool:
 
     if cid == "__FAVORITES__":
         return True
+    if cid.startswith("secret:"):
+        sc = get_secret_chat_from_db(cid)
+        if not sc:
+            return False
+        a_low = (sc.get("user_a") or "").lower()
+        b_low = (sc.get("user_b") or "").lower()
+        return (my_name_low and my_name_low in {a_low, b_low}) or (my_uname_low and my_uname_low in {a_low, b_low})
     if cid.startswith("dm:"):
         parts = [p.strip().lstrip("@").lower() for p in cid[3:].split("__")]
         return (my_name_low and my_name_low in parts) or (my_uname_low and my_uname_low in parts)
@@ -592,7 +675,7 @@ def can_access_chat_id(chat_id: str, user: dict) -> bool:
 
 def upsert_chat_in_db(chat_obj: dict):
     cid = str(chat_obj.get("id") or "").strip()
-    if not cid or cid == "__FAVORITES__" or cid.startswith("dm:"):
+    if not cid or cid == "__FAVORITES__" or cid.startswith("dm:") or cid.startswith("secret:"):
         return
     title = str(chat_obj.get("title") or "").strip() or "Chat"
     uname = norm_username(chat_obj.get("username") or "")
@@ -936,7 +1019,7 @@ def list_chats():
         rows = conn.execute("SELECT * FROM chats ORDER BY created_at DESC").fetchall()
         conn.close()
 
-    my_chats = []
+    my_chats = list_secret_chats_for_user(user)
     public_search_chats = []
 
     for r in rows:
@@ -958,6 +1041,89 @@ def list_chats():
             })
 
     return jsonify({"ok": True, "chats": my_chats, "search_chats": public_search_chats})
+
+
+@app.post("/api/secret-chats")
+def create_secret_chat():
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "Avval tizimga kiring."}), 401
+
+    data = request.get_json(silent=True) or {}
+    peer_raw = (data.get("peer") or "").strip().lstrip("@")
+    auto_destruct = int(data.get("auto_destruct_sec") or 30)
+    if auto_destruct not in {0, 10, 30, 60}:
+        auto_destruct = 30
+
+    if not peer_raw:
+        return jsonify({"ok": False, "error": "Maxfiy chat uchun foydalanuvchi tanlang."}), 400
+
+    peer_user = get_user_by_username(peer_raw)
+    if not peer_user:
+        with _DB_LOCK:
+            conn = get_db()
+            row = conn.execute("SELECT * FROM users WHERE lower(name) = ?", (peer_raw.lower(),)).fetchone()
+            conn.close()
+        if row:
+            peer_user = row_to_user(row)
+
+    if not peer_user:
+        return jsonify({"ok": False, "error": "Bunday foydalanuvchi topilmadi."}), 404
+
+    peer_name = peer_user["name"]
+    if peer_name.lower() == (user.get("name") or "").lower():
+        return jsonify({"ok": False, "error": "O'zingiz bilan maxfiy chat ochib bo'lmaydi."}), 400
+
+    pair = sorted([(user.get("name") or "").lower(), peer_name.lower()])
+    cid = f"secret:{pair[0]}__{pair[1]}"
+    now = time.time()
+
+    with _DB_LOCK:
+        conn = get_db()
+        existing = conn.execute("SELECT * FROM secret_chats WHERE id = ?", (cid,)).fetchone()
+        if existing:
+            conn.execute("UPDATE secret_chats SET auto_destruct_sec = ? WHERE id = ?", (auto_destruct, cid))
+        else:
+            conn.execute(
+                "INSERT INTO secret_chats(id, user_a, user_b, auto_destruct_sec, created_at) VALUES(?, ?, ?, ?, ?)",
+                (cid, user.get("name"), peer_name, auto_destruct, now),
+            )
+        conn.commit()
+        conn.close()
+
+    return jsonify({
+        "ok": True,
+        "chat": {
+            "id": cid,
+            "title": peer_name,
+            "username": peer_user.get("username") or "",
+            "kind": "secret",
+            "peerName": peer_name,
+            "auto_destruct_sec": auto_destruct,
+        },
+    })
+
+
+@app.put("/api/secret-chats/<path:chat_id>")
+def update_secret_chat(chat_id: str):
+    user = get_current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "Avval tizimga kiring."}), 401
+    if not can_access_chat_id(chat_id, user):
+        return jsonify({"ok": False, "error": "Ruxsat yo'q."}), 403
+
+    data = request.get_json(silent=True) or {}
+    auto_destruct = int(data.get("auto_destruct_sec") or 30)
+    if auto_destruct not in {0, 10, 30, 60}:
+        auto_destruct = 30
+
+    with _DB_LOCK:
+        conn = get_db()
+        conn.execute("UPDATE secret_chats SET auto_destruct_sec = ? WHERE id = ?", (auto_destruct, chat_id))
+        conn.commit()
+        conn.close()
+
+    return jsonify({"ok": True, "auto_destruct_sec": auto_destruct})
 
 
 @app.post("/api/chats")
@@ -1130,6 +1296,17 @@ def delete_chat(chat_id: str):
             conn.close()
         return jsonify({"ok": True, "deleted": True})
 
+    if cid.startswith("secret:"):
+        if not can_access_chat_id(cid, user):
+            return jsonify({"ok": False, "error": "Ruxsat yo'q."}), 403
+        with _DB_LOCK:
+            conn = get_db()
+            conn.execute("DELETE FROM secret_chats WHERE id = ?", (cid,))
+            conn.execute("DELETE FROM messages WHERE chat_id = ?", (cid,))
+            conn.commit()
+            conn.close()
+        return jsonify({"ok": True, "deleted": True})
+
     if cid.startswith("dm:"):
         if not can_access_chat_id(cid, user):
             return jsonify({"ok": False, "error": "Ruxsat yo'q."}), 403
@@ -1166,9 +1343,10 @@ def get_messages():
 
     with _DB_LOCK:
         conn = get_db()
+        conn.execute("DELETE FROM messages WHERE expire_at > 0 AND expire_at <= ?", (now,))
         if ttl > 0:
-            conn.execute("DELETE FROM messages WHERE ts < ?", (now - ttl,))
-            conn.commit()
+            conn.execute("DELETE FROM messages WHERE chat_id NOT LIKE 'secret:%' AND ts < ?", (now - ttl,))
+        conn.commit()
         rows = conn.execute("SELECT * FROM messages ORDER BY ts ASC").fetchall()
         conn.close()
 
@@ -1183,6 +1361,8 @@ def get_messages():
         if cid == "__FAVORITES__":
             if (r["sender"] or "").lower() != my_name_low and (r["sender_username"] or "").lower() != my_uname_low:
                 continue
+        exp = float(r["expire_at"] or 0)
+        rem = max(0, int(exp - now)) if exp > 0 else 0
         visible.append({
             "id": r["id"],
             "sender": r["sender"],
@@ -1194,6 +1374,8 @@ def get_messages():
             "media_type": r["media_type"],
             "time": r["time_str"],
             "ts": float(r["ts"] or 0),
+            "expire_at": exp,
+            "remaining_sec": rem,
             "edited": bool(r["edited"]),
         })
 
@@ -1251,6 +1433,13 @@ def create_message():
             media_type = "file"
 
     now = time.time()
+    expire_at = 0.0
+    if str(chat_id).startswith("secret:"):
+        sc = get_secret_chat_from_db(chat_id)
+        sec = int(sc["auto_destruct_sec"]) if sc else 30
+        if sec > 0:
+            expire_at = now + sec
+
     msg = {
         "id": str(uuid.uuid4()),
         "sender": sender,
@@ -1262,19 +1451,21 @@ def create_message():
         "media_type": media_type,
         "time": time.strftime("%H:%M"),
         "ts": now,
+        "expire_at": expire_at,
+        "remaining_sec": max(0, int(expire_at - now)) if expire_at > 0 else 0,
         "edited": False,
     }
     with _DB_LOCK:
         conn = get_db()
         conn.execute(
             """
-            INSERT INTO messages(id, sender, sender_username, chat_id, text, reply_to, media_url, media_type, time_str, ts, edited)
-            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            INSERT INTO messages(id, sender, sender_username, chat_id, text, reply_to, media_url, media_type, time_str, ts, expire_at, edited)
+            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
             """,
             (
                 msg["id"], msg["sender"], msg["sender_username"], msg["chat_id"],
                 msg["text"], msg["reply_to"], msg["media_url"], msg["media_type"],
-                msg["time"], msg["ts"],
+                msg["time"], msg["ts"], msg["expire_at"],
             ),
         )
         conn.commit()
